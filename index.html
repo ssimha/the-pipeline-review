@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Decline of the Mediocre Data Scientist</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0a0a0a;
+    --paper: #f2ede4;
+    --accent: #c8381b;
+    --gold: #c9a84c;
+    --muted: #6b6560;
+    --rule: #2a2a2a;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* NOISE TEXTURE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.5;
+  }
+
+  /* MASTHEAD */
+  .masthead {
+    border-bottom: 3px double var(--rule);
+    padding: 18px 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    opacity: 0;
+    animation: fadeIn 1s 0.2s forwards;
+  }
+
+  .masthead-center {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+
+  /* HERO */
+  .hero {
+    position: relative;
+    padding: 60px 48px 40px;
+    max-width: 1100px;
+    margin: 0 auto;
+    opacity: 0;
+    animation: slideUp 1s 0.5s forwards;
+  }
+
+  .hero-overline {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .hero-overline::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  .hero-headline {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(3rem, 8vw, 7.5rem);
+    font-weight: 900;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+
+  .hero-headline em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .hero-sub-headline {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.5rem, 3.5vw, 3rem);
+    font-weight: 400;
+    font-style: italic;
+    color: var(--muted);
+    line-height: 1.2;
+    margin-bottom: 40px;
+  }
+
+  .hero-rule {
+    border: none;
+    border-top: 1px solid var(--rule);
+    margin: 24px 0;
+  }
+
+  .hero-meta {
+    display: flex;
+    gap: 40px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .hero-meta span strong {
+    color: var(--ink);
+    display: block;
+    font-size: 0.75rem;
+  }
+
+  /* PULLQUOTE STRIP */
+  .pullquote-strip {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 40px 48px;
+    position: relative;
+    overflow: hidden;
+    opacity: 0;
+    animation: fadeIn 1s 1s forwards;
+  }
+
+  .pullquote-strip::after {
+    content: '❞';
+    position: absolute;
+    right: 48px;
+    top: -20px;
+    font-size: 10rem;
+    opacity: 0.06;
+    font-family: 'Playfair Display', serif;
+    color: var(--gold);
+  }
+
+  .pullquote-strip blockquote {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.4rem, 3vw, 2.2rem);
+    font-style: italic;
+    font-weight: 400;
+    line-height: 1.4;
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .pullquote-strip blockquote strong {
+    font-style: normal;
+    color: var(--gold);
+  }
+
+  /* MAIN CONTENT */
+  .content-wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 60px 48px;
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 60px;
+  }
+
+  .main-col { }
+
+  .sidebar { padding-top: 8px; }
+
+  /* SECTION STYLING */
+  .section {
+    margin-bottom: 56px;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+
+  .section.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .section-number {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  .section h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.6rem, 3vw, 2.4rem);
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 20px;
+    color: var(--ink);
+  }
+
+  .section h2 em { font-style: italic; color: var(--accent); }
+
+  .section p {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: #2a2520;
+    margin-bottom: 16px;
+  }
+
+  .section p strong {
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  /* DROP CAP */
+  .drop-cap::first-letter {
+    font-family: 'Playfair Display', serif;
+    font-size: 5.2rem;
+    font-weight: 900;
+    float: left;
+    line-height: 0.75;
+    margin-right: 10px;
+    margin-top: 8px;
+    color: var(--accent);
+  }
+
+  /* COMPARISON TABLE */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 32px 0;
+    font-size: 0.9rem;
+  }
+
+  .compare-table th {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 14px 16px;
+    text-align: left;
+  }
+
+  .compare-table th.accent-col {
+    background: var(--accent);
+  }
+
+  .compare-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #d8d2c8;
+    vertical-align: top;
+    line-height: 1.5;
+  }
+
+  .compare-table tr:nth-child(even) td { background: rgba(0,0,0,0.03); }
+
+  .compare-table .category {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  .compare-table .old { color: var(--muted); }
+  .compare-table .new { color: var(--ink); font-weight: 500; }
+  .compare-table .verdict { color: var(--accent); font-weight: 700; font-family: 'Space Mono', monospace; font-size: 0.7rem; }
+
+  /* MANIFESTO BLOCK */
+  .manifesto {
+    background: var(--accent);
+    color: var(--paper);
+    padding: 40px;
+    margin: 40px 0;
+    position: relative;
+  }
+
+  .manifesto::before {
+    content: 'MANIFESTO';
+    font-family: 'Space Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.3em;
+    opacity: 0.6;
+    display: block;
+    margin-bottom: 20px;
+  }
+
+  .manifesto ol {
+    list-style: none;
+    counter-reset: manifesto;
+  }
+
+  .manifesto ol li {
+    counter-increment: manifesto;
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    font-size: 1rem;
+    line-height: 1.6;
+    font-weight: 300;
+  }
+
+  .manifesto ol li::before {
+    content: counter(manifesto, decimal-leading-zero);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    opacity: 0.5;
+    min-width: 28px;
+    padding-top: 3px;
+  }
+
+  .manifesto ol li strong { font-weight: 700; }
+
+  /* SIDEBAR */
+  .sidebar-card {
+    border: 1px solid var(--rule);
+    padding: 24px;
+    margin-bottom: 32px;
+  }
+
+  .sidebar-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .sidebar-card h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .sidebar-card p {
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+
+  .stat-block {
+    text-align: center;
+    padding: 28px 20px;
+    background: var(--ink);
+    color: var(--paper);
+    margin-bottom: 32px;
+  }
+
+  .stat-block .big-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 4rem;
+    font-weight: 900;
+    color: var(--gold);
+    line-height: 1;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .stat-block p {
+    font-size: 0.75rem;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    line-height: 1.5;
+  }
+
+  .skill-list {
+    list-style: none;
+    margin: 0;
+  }
+
+  .skill-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid #d8d2c8;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--ink);
+  }
+
+  .skill-list li::before {
+    content: '';
+    display: block;
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .skill-list li.fading {
+    color: var(--muted);
+    text-decoration: line-through;
+  }
+
+  .skill-list li.fading::before { background: var(--muted); }
+
+  /* TIMELINE */
+  .timeline {
+    position: relative;
+    padding-left: 24px;
+    border-left: 2px solid var(--rule);
+    margin: 28px 0;
+  }
+
+  .timeline-item {
+    margin-bottom: 28px;
+    position: relative;
+  }
+
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -31px;
+    top: 4px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 2px solid var(--rule);
+  }
+
+  .timeline-item.active::before {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .timeline-year {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  .timeline-title {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 4px;
+  }
+
+  .timeline-desc {
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* FINAL CTA */
+  .final-cta {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 80px 48px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .final-cta::before {
+    content: 'DATA IS FOOD';
+    position: absolute;
+    font-family: 'Playfair Display', serif;
+    font-size: 12rem;
+    font-weight: 900;
+    opacity: 0.04;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    white-space: nowrap;
+    pointer-events: none;
+    color: var(--gold);
+  }
+
+  .final-cta h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 4rem);
+    font-weight: 900;
+    font-style: italic;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .final-cta h2 em { color: var(--gold); font-style: normal; }
+
+  .final-cta p {
+    font-size: 1rem;
+    opacity: 0.7;
+    max-width: 600px;
+    margin: 0 auto 32px;
+    line-height: 1.7;
+    position: relative;
+  }
+
+  .cta-badge {
+    display: inline-block;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 12px 32px;
+    position: relative;
+  }
+
+  /* FOOTER RULE */
+  .footer-rule {
+    border: none;
+    border-top: 3px double var(--rule);
+    margin: 0 48px;
+    opacity: 0.3;
+  }
+
+  .footer {
+    padding: 24px 48px;
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* DECORATIVE ELEMENTS */
+  .ornament {
+    text-align: center;
+    font-size: 1.5rem;
+    opacity: 0.3;
+    margin: 32px 0;
+    letter-spacing: 0.5em;
+  }
+
+  .chapter-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 48px 0;
+  }
+
+  .chapter-divider::before,
+  .chapter-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+  }
+
+  .chapter-divider span {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  /* HIGHLIGHT */
+  .highlight-row {
+    border-left: 4px solid var(--gold);
+    padding: 16px 20px;
+    background: rgba(201,168,76,0.07);
+    margin: 24px 0;
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 1.15rem;
+    line-height: 1.6;
+    color: var(--ink);
+  }
+
+  /* ANIMATIONS */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .masthead { padding: 14px 20px; }
+    .hero { padding: 40px 20px 30px; }
+    .pullquote-strip { padding: 32px 20px; }
+    .content-wrap { grid-template-columns: 1fr; padding: 40px 20px; gap: 40px; }
+    .sidebar { order: -1; }
+    .final-cta { padding: 60px 20px; }
+    .footer { padding: 20px; flex-direction: column; gap: 8px; }
+    .footer-rule { margin: 0 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- MASTHEAD -->
+<header class="masthead">
+  <span>Vol. I — No. 1</span>
+  <span class="masthead-center">The Pipeline Review</span>
+  <span>May 2026 &nbsp;·&nbsp; Opinion</span>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-overline">Provocation &amp; Analysis</div>
+  <h1 class="hero-headline">
+    The <em>Decline</em><br>of the Mediocre<br>Data Scientist
+  </h1>
+  <p class="hero-sub-headline">And the Quiet Coronation of<br>the Data Engineer</p>
+  <hr class="hero-rule">
+  <div class="hero-meta">
+    <span><strong>Reading Time</strong> 8 minutes</span>
+    <span><strong>Filed Under</strong> Data Engineering · AI · Opinion</span>
+    <span><strong>Audience</strong> Practitioners First</span>
+  </div>
+</section>
+
+<!-- PULLQUOTE STRIP -->
+<div class="pullquote-strip">
+  <blockquote>
+    "You cannot build intelligent systems on <strong>dirty pipelines</strong>.<br>
+    The model is not the product. <strong>The data infrastructure is.</strong>"
+  </blockquote>
+</div>
+
+<!-- CONTENT -->
+<div class="content-wrap">
+  <main class="main-col">
+
+    <!-- SECTION 1 -->
+    <article class="section">
+      <div class="section-number">§ 01 — The Book That Saw It Coming</div>
+      <h2>We Have Been Here Before</h2>
+      <p class="drop-cap">In the early 1990s, a book arrived that made American programmers deeply uncomfortable. <em>The Decline of the American Programmer</em> by Ed Yourdon argued, bluntly, that the American software developer — overpaid, under-disciplined, and complacent — was about to be displaced by cheaper, hungrier talent from abroad. The industry scoffed. Then it happened.</p>
+      <p>The offshoring wave did not kill all programmers. It killed a specific kind: the average ones. The ones who wrote boilerplate, who knew only one stack, who added no architectural insight — just lines of code. The great ones adapted, moved up the value chain, and became more valuable than ever.</p>
+      <p>We are living through the same story again — except this time, it is not geography doing the disrupting. <strong>It is the LLM.</strong></p>
+      <div class="highlight-row">
+        History does not repeat, but it does rhyme — and right now, it is rhyming very loudly in the direction of data infrastructure.
+      </div>
+    </article>
+
+    <div class="chapter-divider"><span>The Great Displacement</span></div>
+
+    <!-- SECTION 2 -->
+    <article class="section">
+      <div class="section-number">§ 02 — The Myth of the Data Scientist</div>
+      <h2>The Algorithm<br><em>Was Never the Product</em></h2>
+      <p>For a decade, the data scientist occupied a throne they barely earned. Armed with Jupyter notebooks, a copy of <em>Hands-On Machine Learning</em>, and a working knowledge of scikit-learn, an entire generation declared themselves "AI engineers." They built gradient boosted trees to predict churn. They wrote logistic regression for fraud detection. They called it machine learning.</p>
+      <p>Businesses paid handsomely — not because the models were sophisticated, but because there were few who could do even that. Scarcity created perceived value. But scarcity is gone.</p>
+      <p><strong>GPT-4 writes better sklearn pipelines than most data scientists.</strong> Claude drafts cleaner feature engineering code in 30 seconds than the average practitioner does in a day. The bespoke small model — the bread and butter of the mid-tier data scientist — is being commoditized into oblivion.</p>
+      <p>The math priesthood that designed ResNets, Transformers, and LLMs? They were always a tiny, elite group at DeepMind, OpenAI, and Google Brain. That was never a career path — it was a calling for a handful of exceptional people. Confusing those architects with the average "data scientist who knows pandas" was always a category error.</p>
+    </article>
+
+    <!-- COMPARISON TABLE -->
+    <div class="section">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>Mediocre ML Data Scientist</th>
+            <th class="accent-col">Data / AI Engineer (2026)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="category">Core Skill</td>
+            <td class="old">Sklearn, notebooks, basic pandas</td>
+            <td class="new">ETL design, DQ frameworks, pipeline architecture</td>
+          </tr>
+          <tr>
+            <td class="category">AI Contribution</td>
+            <td class="old">Trains small models on clean data handed to them</td>
+            <td class="new">Builds the infrastructure that makes AI trustworthy</td>
+          </tr>
+          <tr>
+            <td class="category">LLM Threat Level</td>
+            <td class="old">HIGH — LLMs replicate most of their output</td>
+            <td class="new">LOW — LLMs need their work to even function</td>
+          </tr>
+          <tr>
+            <td class="category">Data Reality</td>
+            <td class="old">Assumes clean data arrives from somewhere</td>
+            <td class="new">Knows that "somewhere" is 80% of the real work</td>
+          </tr>
+          <tr>
+            <td class="category">Unstructured Data</td>
+            <td class="old">Avoided it. Stuck to CSVs and tabular</td>
+            <td class="new">Ingests, parses, chunks, and pipelines it for RAG</td>
+          </tr>
+          <tr>
+            <td class="category">Scale</td>
+            <td class="old">Works on samples. Rarely thinks about terabytes</td>
+            <td class="new">Designs for petabytes. Partitioning is instinct</td>
+          </tr>
+          <tr>
+            <td class="category">2026 Market Value</td>
+            <td class="verdict">↓ DECLINING</td>
+            <td class="verdict">↑ ASCENDING</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="chapter-divider"><span>What Actually Runs AI</span></div>
+
+    <!-- SECTION 3 -->
+    <article class="section">
+      <div class="section-number">§ 03 — The Kitchen Analogy</div>
+      <h2><em>Data Is Food.</em><br>And the Cook Runs the Kitchen.</h2>
+      <p>Every chef in a Michelin-starred kitchen will tell you: the ingredient is everything. You cannot rescue a bad ingredient with technique. The greatest chef in the world cannot make great food from rotten produce.</p>
+      <p>LLMs are the most sophisticated culinary technique humanity has ever built. They are extraordinary chefs. But they are still chefs. <strong>Feed them garbage, and they produce confident, articulate, well-formatted garbage.</strong> Feed them well — clean, structured, contextually rich, properly chunked data — and they produce something genuinely magical.</p>
+      <p>Who controls the quality of what goes into the kitchen? The data engineer. The person who designed the <strong>ETL pipeline</strong>. The person who wrote the <strong>data quality checks</strong>. The person who built the <strong>data warehouse schema</strong> with enough thought to accommodate vectors, embeddings, and unstructured documents. The person who decided how to handle nulls, duplicates, schema drift, and late-arriving records.</p>
+      <p>That person — who spent years being told they were "just infrastructure" — is now the most important person in any serious AI deployment.</p>
+    </article>
+
+    <!-- MANIFESTO -->
+    <div class="section manifesto">
+      <ol>
+        <li><strong>If your data pipeline is broken, your AI is broken.</strong> No prompt engineering fixes upstream rot.</li>
+        <li><strong>ETL is not plumbing. ETL is architecture.</strong> The decisions made in transformation define what intelligence is even possible.</li>
+        <li><strong>Data quality is model quality.</strong> A hallucinating LLM is often a dirty-data problem wearing a neural network costume.</li>
+        <li><strong>Unstructured data mastery is the new moat.</strong> 80% of enterprise data is unstructured. Who processes it determines who wins.</li>
+        <li><strong>The data warehouse is now the AI foundation.</strong> A well-modeled DW with proper lineage is an AI-ready knowledge base. A poorly modeled one is a liability.</li>
+        <li><strong>Python is not the skill. Python + systems thinking is.</strong> Writing a pandas script is not engineering. Designing a fault-tolerant ingestion system is.</li>
+      </ol>
+    </div>
+
+    <div class="chapter-divider"><span>The New Value Chain</span></div>
+
+    <!-- SECTION 4 -->
+    <article class="section">
+      <div class="section-number">§ 04 — What the Real AI Engineer Knows</div>
+      <h2>The Skills That<br><em>Actually</em> Ship AI at Scale</h2>
+      <p>Let us be precise. The data engineer who becomes the real AI engineer of 2026 is not simply someone who knows SQL and Airflow. That is necessary but not sufficient. The new AI engineer is someone who can traverse the entire data-to-intelligence stack:</p>
+      <p><strong>They think in pipelines, not notebooks.</strong> Notebooks are for exploration. Production AI runs on orchestrated, monitored, fault-tolerant pipelines. Airflow, Prefect, Dagster — these are not DevOps curiosities, they are the circulatory system of every AI product that actually works.</p>
+      <p><strong>They build for unstructured data.</strong> PDFs, emails, call transcripts, web scrapes, images with metadata — the enterprise is drowning in it. The engineer who can ingest, parse, chunk, embed, and index this at scale is building the backbone of every RAG system deployed today.</p>
+      <p><strong>They are obsessed with data quality.</strong> Not as a checkbox — as a philosophy. Great Expectations, dbt tests, custom validation layers — these are not optional. An AI system that operates on drifted, stale, or incorrect data is a liability, not an asset.</p>
+      <p><strong>They understand data profiling deeply.</strong> Column distributions. Null rates. Cardinality. Outliers. Referential integrity. These are not academic statistics — they are the forensic tools you use to understand why your AI is behaving unexpectedly. The data profiler is the AI debugger.</p>
+    </article>
+
+    <!-- SECTION 5 -->
+    <article class="section">
+      <div class="section-number">§ 05 — The Timeline of Power</div>
+      <h2>How the Throne<br><em>Changed Hands</em></h2>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-year">2012 – 2018</div>
+          <div class="timeline-title">The Data Scientist Decade</div>
+          <div class="timeline-desc">Kaggle wins, PhD hiring frenzies. The sexiest job in tech. Small ML models everywhere, each one a bespoke artisanal creation.</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-year">2018 – 2022</div>
+          <div class="timeline-title">The MLOps Interlude</div>
+          <div class="timeline-desc">Industry realizes models rot in notebooks. ML engineers emerge. Data engineers finally get their "modern data stack" moment with dbt, Snowflake, Databricks.</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-year">2022 – 2024</div>
+          <div class="timeline-title">The LLM Earthquake</div>
+          <div class="timeline-desc">ChatGPT lands. Everything changes. Small bespoke ML models begin their quiet extinction. Companies stop training and start prompting. The rug shifts.</div>
+        </div>
+        <div class="timeline-item active">
+          <div class="timeline-year">2025 – Now</div>
+          <div class="timeline-title">The Infrastructure Era</div>
+          <div class="timeline-desc">RAG, agents, and enterprise AI all run on data pipelines. The data engineer who understands unstructured data, vector stores, and DQ is the most sought-after AI builder in the market.</div>
+        </div>
+      </div>
+    </article>
+
+    <div class="chapter-divider"><span>A Fair Correction</span></div>
+
+    <!-- SECTION 6 — pushback -->
+    <article class="section">
+      <div class="section-number">§ 06 — Where We Correct The Record</div>
+      <h2>What This Argument<br><em>Does Not Mean</em></h2>
+      <p>Intellectual honesty demands we state what we are not arguing. The decline of the mediocre data scientist does not mean the death of data science as a discipline. The elite researchers who built the Transformer architecture, who designed RLHF, who pioneered diffusion models — they are irreplaceable. Their work defines the ceiling of what is possible.</p>
+      <p>Nor does it mean every data scientist is obsolete. Those who evolved — into ML engineering, fine-tuning specialists, evaluation frameworks, and AI safety measurement — are deeply valuable. <strong>The ones who are gone are the ones who did not move.</strong> The ones who are still writing sklearn pipelines in 2026 with the same posture they had in 2019.</p>
+      <p>The argument is simply this: <strong>the median value in the AI production stack has migrated.</strong> It has moved from the model layer to the data layer. This is not an opinion — it is visible in job postings, in where infrastructure investment is flowing, and in the postmortems of failed AI deployments where, consistently, the root cause is not "the model was bad" but "the data was not ready."</p>
+      <div class="highlight-row">
+        The field did not become less mathematical. It became mathematical about different things — data distributions, pipeline correctness, embedding quality, and retrieval precision.
+      </div>
+    </article>
+
+  </main>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="stat-block">
+      <span class="big-num">80%</span>
+      <p>of enterprise data is unstructured — and most ML pipelines never touched it</p>
+    </div>
+
+    <div class="sidebar-card">
+      <div class="sidebar-label">Skills Ascending</div>
+      <ul class="skill-list">
+        <li>ETL Pipeline Design</li>
+        <li>Data Quality Engineering</li>
+        <li>Data Warehouse Modeling</li>
+        <li>Unstructured Data Processing</li>
+        <li>Vector DB & Embeddings</li>
+        <li>RAG Architecture</li>
+        <li>Python at Pipeline Scale</li>
+        <li>Data Profiling & Lineage</li>
+        <li>Streaming Ingestion</li>
+      </ul>
+    </div>
+
+    <div class="sidebar-card">
+      <div class="sidebar-label">Skills Declining</div>
+      <ul class="skill-list">
+        <li class="fading">Bespoke sklearn models</li>
+        <li class="fading">Manual feature engineering</li>
+        <li class="fading">Notebook-first workflows</li>
+        <li class="fading">Isolated model training</li>
+        <li class="fading">Tabular-only data mindset</li>
+      </ul>
+    </div>
+
+    <div class="sidebar-card">
+      <div class="sidebar-label">The Core Truth</div>
+      <h4>Data Is Food for AI</h4>
+      <p>The finest chef cannot save a rotten ingredient. The most powerful model cannot save a broken pipeline. The cook — the data engineer — now runs the kitchen.</p>
+    </div>
+
+    <div class="stat-block">
+      <span class="big-num">#1</span>
+      <p>Root cause of failed AI deployments: data quality, not model quality</p>
+    </div>
+  </aside>
+</div>
+
+<!-- FINAL CTA -->
+<section class="final-cta">
+  <h2>If You Understand <em>Pipelines</em>,<br>You Build the Future.</h2>
+  <p>The people who will build the AI systems of the next decade are not the ones who can explain backpropagation at a cocktail party. They are the ones who can design a fault-tolerant ingestion pipeline at 3am when production breaks.</p>
+  <div class="cta-badge">Data Is Not a Support Function. Data Is the Product.</div>
+</section>
+
+<hr class="footer-rule">
+<footer class="footer">
+  <span>The Pipeline Review &nbsp;·&nbsp; Vol. I</span>
+  <span>Opinion &nbsp;·&nbsp; Data Engineering &nbsp;·&nbsp; AI Infrastructure</span>
+  <span>May 2026</span>
+</footer>
+
+<script>
+  // Intersection Observer for section animations
+  const sections = document.querySelectorAll('.section');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
