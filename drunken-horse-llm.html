@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Drunken Horse — Why Your LLM Needs a Lagam</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink:        #1a1208;
+      --parchment:  #f7f0e3;
+      --amber:      #b8621a;
+      --scotch:     #7c3d0e;
+      --gold:       #d4a017;
+      --smoke:      #8a7a6a;
+      --cream:      #fdf8f0;
+      --charcoal:   #2d2416;
+      --reins:      #3b6e3a;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--cream);
+      color: var(--ink);
+      font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 18px;
+      line-height: 1.75;
+    }
+
+    /* ── HERO ───────────────────────────────────────── */
+    .hero {
+      background: var(--charcoal);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 30% 60%, rgba(184,98,26,0.18) 0%, transparent 65%),
+                  radial-gradient(ellipse at 75% 20%, rgba(212,160,23,0.10) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .hero-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 32px;
+      opacity: 0.85;
+    }
+
+    /* ── HORSE STAGE ── */
+    .horse-stage {
+      position: relative;
+      width: 320px;
+      height: 140px;
+      margin-bottom: 48px;
+    }
+
+    .horse {
+      font-size: 64px;
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      filter: drop-shadow(0 0 18px rgba(184,98,26,0.45));
+      animation: stagger 1.8s ease-in-out infinite;
+      user-select: none;
+    }
+
+    .scotch-glass {
+      font-size: 26px;
+      position: absolute;
+      top: 8px;
+      right: 40px;
+      animation: sway 2.2s ease-in-out infinite alternate;
+      opacity: 0.9;
+    }
+
+    .reins-label {
+      position: absolute;
+      bottom: 14px;
+      left: 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--reins);
+      letter-spacing: 0.15em;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+
+    .horse-stage:hover .reins-label { opacity: 1; }
+    .horse-stage:hover .horse { animation: gallop 0.4s ease-in-out infinite alternate; filter: drop-shadow(0 0 24px rgba(59,110,58,0.6)); }
+    .horse-stage:hover .scotch-glass { opacity: 0; transition: opacity 0.3s; }
+
+    @keyframes stagger {
+      0%   { transform: translateX(-50%) rotate(-4deg); }
+      25%  { transform: translateX(calc(-50% + 18px)) rotate(6deg); }
+      50%  { transform: translateX(calc(-50% - 12px)) rotate(-7deg); }
+      75%  { transform: translateX(calc(-50% + 8px)) rotate(3deg); }
+      100% { transform: translateX(-50%) rotate(-4deg); }
+    }
+
+    @keyframes gallop {
+      from { transform: translateX(calc(-50% - 6px)) scaleX(1); }
+      to   { transform: translateX(calc(-50% + 6px)) scaleX(1); }
+    }
+
+    @keyframes sway {
+      from { transform: rotate(-12deg) translateY(0px); }
+      to   { transform: rotate(8deg) translateY(-6px); }
+    }
+
+    /* ── HERO TEXT ── */
+    .hero-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(2.6rem, 7vw, 5rem);
+      font-weight: 900;
+      color: var(--parchment);
+      text-align: center;
+      line-height: 1.08;
+      max-width: 780px;
+      margin-bottom: 24px;
+    }
+
+    .hero-title em {
+      font-style: italic;
+      color: var(--gold);
+    }
+
+    .hero-sub {
+      font-family: 'Source Serif 4', serif;
+      font-size: 1.15rem;
+      font-weight: 300;
+      color: var(--smoke);
+      text-align: center;
+      max-width: 520px;
+      line-height: 1.6;
+      margin-bottom: 36px;
+    }
+
+    .hero-hint {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--amber);
+      letter-spacing: 0.18em;
+      opacity: 0.6;
+      text-align: center;
+    }
+
+    /* ── BODY ───────────────────────────────────────── */
+    .article {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 80px 24px 120px;
+    }
+
+    .byline {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 56px;
+      padding-bottom: 28px;
+      border-bottom: 1px solid rgba(184,98,26,0.2);
+    }
+
+    .byline-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--amber);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .byline-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--smoke);
+      letter-spacing: 0.08em;
+    }
+
+    .byline-text strong {
+      display: block;
+      color: var(--charcoal);
+      font-size: 12px;
+      margin-bottom: 2px;
+    }
+
+    /* ── TYPOGRAPHY ── */
+    h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--scotch);
+      margin: 64px 0 20px;
+      line-height: 1.2;
+    }
+
+    h3 {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--amber);
+      margin: 40px 0 12px;
+    }
+
+    p { margin-bottom: 22px; }
+
+    .article > p:first-of-type {
+      font-size: 1.2rem;
+      font-weight: 400;
+      color: var(--charcoal);
+      line-height: 1.8;
+    }
+
+    strong { color: var(--scotch); font-weight: 600; }
+
+    em { font-style: italic; color: var(--charcoal); }
+
+    /* ── PULL QUOTE ── */
+    .pull-quote {
+      border-left: 4px solid var(--gold);
+      background: linear-gradient(135deg, rgba(184,98,26,0.06), rgba(212,160,23,0.04));
+      padding: 28px 32px;
+      margin: 44px -8px;
+      border-radius: 0 4px 4px 0;
+    }
+
+    .pull-quote p {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      font-style: italic;
+      color: var(--charcoal);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    /* ── WHISKEY ANALOGY CARD ── */
+    .analogy-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+      margin: 44px 0;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(184,98,26,0.2);
+    }
+
+    .analogy-cell {
+      padding: 22px 24px;
+      background: var(--parchment);
+    }
+
+    .analogy-cell.header {
+      background: var(--charcoal);
+      color: var(--gold);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 14px 24px;
+    }
+
+    .analogy-cell.amber-bg {
+      background: rgba(184,98,26,0.08);
+    }
+
+    .analogy-cell .icon { font-size: 22px; margin-bottom: 8px; display: block; }
+    .analogy-cell .label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin-bottom: 6px;
+    }
+    .analogy-cell p { font-size: 0.88rem; color: var(--charcoal); margin: 0; line-height: 1.55; }
+
+    /* ── CODE / PROMPT BLOCK ── */
+    .prompt-block {
+      background: var(--charcoal);
+      border-radius: 8px;
+      padding: 28px 32px;
+      margin: 36px 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .prompt-block::before {
+      content: 'PROMPT';
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      color: var(--gold);
+      opacity: 0.6;
+    }
+
+    .prompt-block .bad {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      color: #e07070;
+      line-height: 1.7;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .prompt-block .good {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      color: #7ec87e;
+      line-height: 1.7;
+    }
+
+    .prompt-block .label-bad, .prompt-block .label-good {
+      font-size: 9px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: block;
+      opacity: 0.7;
+    }
+
+    .prompt-block .label-bad { color: #e07070; }
+    .prompt-block .label-good { color: #7ec87e; }
+
+    /* ── LAGAM FRAMEWORK BOX ── */
+    .framework {
+      border: 1.5px solid var(--reins);
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 44px 0;
+    }
+
+    .framework-header {
+      background: var(--reins);
+      color: white;
+      padding: 16px 24px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .framework-body { padding: 24px 28px; background: rgba(59,110,58,0.04); }
+
+    .framework-item {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 18px;
+      align-items: flex-start;
+    }
+
+    .framework-item:last-child { margin-bottom: 0; }
+
+    .fi-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--reins);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .fi-text { font-size: 0.9rem; line-height: 1.6; color: var(--charcoal); }
+    .fi-text strong { color: var(--reins); }
+
+    /* ── SCOTCH METER ── */
+    .scotch-meter {
+      background: var(--charcoal);
+      border-radius: 8px;
+      padding: 28px 32px;
+      margin: 44px 0;
+    }
+
+    .scotch-meter h3 { color: var(--gold); margin-top: 0; }
+
+    .meter-row {
+      margin-bottom: 16px;
+    }
+
+    .meter-label {
+      display: flex;
+      justify-content: space-between;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--parchment);
+      margin-bottom: 6px;
+      opacity: 0.85;
+    }
+
+    .meter-bar {
+      height: 8px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .meter-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, var(--amber), var(--gold));
+    }
+
+    /* ── CLOSING ── */
+    .closing-rule {
+      border: none;
+      border-top: 1px solid rgba(184,98,26,0.2);
+      margin: 64px 0 40px;
+    }
+
+    .closing-note {
+      background: rgba(184,98,26,0.06);
+      border-radius: 8px;
+      padding: 28px 32px;
+      text-align: center;
+    }
+
+    .closing-note p {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 1.1rem;
+      color: var(--scotch);
+      margin-bottom: 12px;
+    }
+
+    .closing-note .tagline {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--smoke);
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--charcoal);
+      padding: 36px 24px;
+      text-align: center;
+    }
+
+    footer p {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--smoke);
+      letter-spacing: 0.1em;
+      margin-bottom: 0;
+    }
+
+    footer a { color: var(--gold); text-decoration: none; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .analogy-grid { grid-template-columns: 1fr; }
+      .pull-quote { margin: 32px 0; }
+      .hero-title { font-size: 2.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero">
+  <div class="hero-label">The Pipeline Review &nbsp;·&nbsp; LLM Engineering</div>
+
+  <div class="horse-stage">
+    <span class="scotch-glass">🥃</span>
+    <span class="horse">🐴</span>
+    <span class="reins-label">[ hover: apply lagam ]</span>
+  </div>
+
+  <h1 class="hero-title">
+    Your LLM is a <em>Drunken Horse</em>
+  </h1>
+  <p class="hero-sub">
+    Tremendous power. Zero direction. One glass of scotch too many.
+    Give it the reins and it'll trot straight into a hallucination.
+  </p>
+  <p class="hero-hint">↓ &nbsp; scroll for the engineering debrief &nbsp; ↓</p>
+</section>
+
+
+<!-- ═══ ARTICLE ═══ -->
+<main class="article">
+
+  <div class="byline">
+    <div class="byline-avatar">🏇</div>
+    <div class="byline-text">
+      <strong>ssimha</strong>
+      ssimha.github.io &nbsp;·&nbsp; The Pipeline Review &nbsp;·&nbsp; June 2026
+    </div>
+  </div>
+
+  <p>
+    I've been working with LLMs long enough to develop a very precise mental model for what they are.
+    Not a calculator. Not a search engine. Not a sentient oracle.
+    A <strong>drunken horse</strong>.
+  </p>
+
+  <p>
+    Hear me out. It's not an insult. The horse is magnificent — trained on the entire library of
+    human language, mathematics, code, and poetry. It has raw, breathtaking capability.
+    But it also had one too many pegs of single malt. And right now it's standing in your
+    data pipeline, looking very confident, facing entirely the wrong direction.
+  </p>
+
+  <div class="pull-quote">
+    <p>
+      "The power was never the problem. The direction always was."
+    </p>
+  </div>
+
+  <h2>The Stable Before the Storm</h2>
+
+  <p>
+    Think about what a horse actually is before the scotch enters the picture.
+    Thousands of hours of training. Muscle memory. Pattern recognition.
+    The ability to carry enormous weight at speed, navigate terrain, respond to pressure.
+    LLMs are trained on tokens — billions of them — and they build a similar kind of
+    compressed, probabilistic muscle memory for language and logic.
+  </p>
+
+  <p>
+    The training is real. The capability is real. GPT-4, Claude, Gemini —
+    these are not toys. They can debug production code, synthesize research papers,
+    draft legal clauses, and explain Kubernetes networking to a junior engineer
+    at 3 AM. The horse is strong.
+  </p>
+
+  <p>
+    Then someone left the scotch cabinet open.
+  </p>
+
+  <h2>What the Scotch Does (A Technical Interlude)</h2>
+
+  <div class="analogy-grid">
+    <div class="analogy-cell header">🥃 The Scotch</div>
+    <div class="analogy-cell header">🤖 The LLM Equivalent</div>
+
+    <div class="analogy-cell">
+      <span class="icon">🌀</span>
+      <div class="label">Loss of direction</div>
+      <p>Horse walks confidently toward the wrong barn</p>
+    </div>
+    <div class="analogy-cell amber-bg">
+      <span class="icon">🌀</span>
+      <div class="label">Hallucination</div>
+      <p>Model generates plausible-sounding facts that don't exist — citations, APIs, names</p>
+    </div>
+
+    <div class="analogy-cell">
+      <span class="icon">💬</span>
+      <div class="label">Overconfidence</div>
+      <p>Doesn't know it's drunk. Very decisive about being lost</p>
+    </div>
+    <div class="analogy-cell amber-bg">
+      <span class="icon">💬</span>
+      <div class="label">Sycophancy</div>
+      <p>Agrees with your wrong premise, elaborates on it helpfully, then apologises</p>
+    </div>
+
+    <div class="analogy-cell">
+      <span class="icon">🔁</span>
+      <div class="label">Circular loops</div>
+      <p>Keeps passing the same haystack, insists it's new</p>
+    </div>
+    <div class="analogy-cell amber-bg">
+      <span class="icon">🔁</span>
+      <div class="label">Context drift</div>
+      <p>Forgets the original task halfway through a long chain, starts solving adjacent problems</p>
+    </div>
+
+    <div class="analogy-cell">
+      <span class="icon">⚡</span>
+      <div class="label">Burst of brilliance</div>
+      <p>Occasionally, gloriously, does something extraordinary</p>
+    </div>
+    <div class="analogy-cell amber-bg">
+      <span class="icon">⚡</span>
+      <div class="label">Zero-shot genius</div>
+      <p>Without a single example, produces a solution you couldn't have engineered yourself</p>
+    </div>
+  </div>
+
+  <p>
+    The scotch — statistically speaking — is the nature of next-token prediction.
+    The model doesn't have goals. It doesn't have memory of the task.
+    It doesn't have a map. It has extraordinary fluency and no compass.
+    Every token is a bet on what comes next, taken in context of what just came before.
+    High-temperature sampling is literally turning up the scotch dial.
+  </p>
+
+  <h2>Giving It the Lagam (Reins)</h2>
+
+  <p>
+    A word on language before we go further. <em>Reins</em> in English is just the physical strap —
+    a tool, neutral, mechanical. <em>Lagam</em> (लगाम) in Hindi carries the act itself:
+    disciplined control over something powerful. <em>Bina lagam ka ghoda</em> — a horse without lagam —
+    is already an idiom for unchecked force. So when we say lagam (reins), we mean not just the strap
+    but the <strong>intention of control</strong>. Free reins = no lagam = chaos.
+    Lagam applied = reins with purpose = a thoroughbred that wins races.
+    This is the whole game of prompt engineering, retrieval augmentation, fine-tuning, and agent design.
+    Every technique we've built in the last three years is a version of the same thing:
+    putting a harness on a very powerful animal that has questionable judgment.
+  </p>
+
+  <p>
+    The sober engineer's job is not to sober the horse up.
+    You can't. The stochastic nature is baked in.
+    Your job is to design a track it cannot escape from.
+  </p>
+
+  <div class="framework">
+    <div class="framework-header">🎯 The LAGAM Framework — Engineering Control Over LLMs</div>
+    <div class="framework-body">
+      <div class="framework-item">
+        <div class="fi-icon">L</div>
+        <div class="fi-text"><strong>Lock the output format.</strong> JSON schemas, XML tags, typed responses. Don't ask the horse to decide how to present the answer. It will add fourteen sentences of context nobody asked for.</div>
+      </div>
+      <div class="framework-item">
+        <div class="fi-icon">A</div>
+        <div class="fi-text"><strong>Anchor to ground truth.</strong> RAG isn't magic — it's giving the horse a map it cannot ignore. Retrieval grounds generation. Without it, memory is imagination.</div>
+      </div>
+      <div class="framework-item">
+        <div class="fi-icon">G</div>
+        <div class="fi-text"><strong>Gate every step.</strong> Agentic systems are multi-hop drunk-horse parades. Each hop needs a gate — a validator, a guardrail, a confidence check. One hallucination compounds into seven.</div>
+      </div>
+      <div class="framework-item">
+        <div class="fi-icon">A</div>
+        <div class="fi-text"><strong>Audit the reasoning, not just the output.</strong> Ask the model to show its work via Chain-of-Thought. A wrong answer with visible reasoning is debuggable. A confident wrong answer is a production incident.</div>
+      </div>
+      <div class="framework-item">
+        <div class="fi-icon">M</div>
+        <div class="fi-text"><strong>Minimise the blast radius.</strong> Single-responsibility prompts. One task per call. The more instructions on the horse's back, the more likely it throws them all off and trots away cheerfully.</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>The Prompt Is the Bridle</h2>
+
+  <p>
+    Here's what most people get wrong: they write prompts like they're filing a support ticket.
+    Vague, hopeful, underspecified. And then they're surprised when the horse doesn't know
+    which barn to go to.
+  </p>
+
+  <div class="prompt-block">
+    <span class="label-bad">❌ No lagam — open field, scotch in hand</span>
+    <div class="bad">
+      "Analyze my sales data and give me insights."
+    </div>
+    <span class="label-good">✅ Lagam applied — track, direction, fence posts</span>
+    <div class="good">
+      "You are a data analyst. The user will provide a CSV of monthly sales data.<br>
+      Your task: identify the top 3 revenue trends from the past 6 months.<br>
+      Format: JSON array with keys: trend_name, evidence, recommendation.<br>
+      Do NOT include projections. Do NOT reference data outside the provided CSV.<br>
+      If data is insufficient, return: {&quot;error&quot;: &quot;insufficient_data&quot;, &quot;reason&quot;: &lt;string&gt;}"
+    </div>
+  </div>
+
+  <p>
+    The second prompt isn't longer because the engineer was more verbose.
+    It's longer because the engineer built a fence. Role, task, scope, format, constraint,
+    and a graceful failure mode. The horse has nowhere to go but forward.
+  </p>
+
+  <h2>The Scotch Dial — A Note on Temperature</h2>
+
+  <div class="scotch-meter">
+    <h3>🌡️ Temperature: The Scotch Dial</h3>
+
+    <div class="meter-row">
+      <div class="meter-label"><span>temp=0.0 — Stone cold sober</span><span>Deterministic</span></div>
+      <div class="meter-bar"><div class="meter-fill" style="width:8%"></div></div>
+    </div>
+    <div class="meter-row">
+      <div class="meter-label"><span>temp=0.3 — One drink, sharp</span><span>Classification / Extraction</span></div>
+      <div class="meter-bar"><div class="meter-fill" style="width:30%"></div></div>
+    </div>
+    <div class="meter-row">
+      <div class="meter-label"><span>temp=0.7 — Two pegs, sociable</span><span>Content / Summaries</span></div>
+      <div class="meter-bar"><div class="meter-fill" style="width:65%"></div></div>
+    </div>
+    <div class="meter-row">
+      <div class="meter-label"><span>temp=1.0 — Party mode, creative</span><span>Brainstorming / Ideation</span></div>
+      <div class="meter-bar"><div class="meter-fill" style="width:92%"></div></div>
+    </div>
+    <div class="meter-row">
+      <div class="meter-label"><span>temp=1.5 — Full drunken horse 🐴</span><span>Poetry? Chaos? Genius?</span></div>
+      <div class="meter-bar"><div class="meter-fill" style="width:100%; background: linear-gradient(90deg, #b8621a, #e07070);"></div></div>
+    </div>
+  </div>
+
+  <p>
+    For production data systems, keep the horse at two pegs maximum.
+    For creative work, let it have the whole bottle and then edit sober.
+    The mistake is using high temperature for tasks that require precision
+    and low temperature for tasks that require creativity. Know your task first.
+  </p>
+
+  <h2>When You Drop the Lagam (Reins)</h2>
+
+  <p>
+    Here's the uncomfortable truth that nobody wants to say at the enterprise AI conference:
+    <strong>most LLM failures in production are human failures of specification.</strong>
+    The horse didn't break free. We dropped the lagam. We handed it a map of a different city and were surprised
+    when it got lost.
+  </p>
+
+  <p>
+    Now here's an interesting observation — and this is where the drunken horse metaphor gets precise.
+    After a few pegs of scotch, the horse becomes a <strong>bak bak machine</strong> — a chatterbox.
+    It talks. Fluently. Endlessly. Eloquently. And this is actually its natural strength:
+    language is what the LLM was trained on. Ask it to summarise, explain, translate, rephrase,
+    draft, narrate — and the scotch barely shows. The horse is in its element, verbal and warm.
+    <strong>RAG tasks are relatively easy to rein in</strong> because the horse is already a language animal —
+    you give it a document, it talks about the document. The lagam is light.
+  </p>
+
+  <p>
+    But ask it to <strong>solve a structural problem</strong> — write a complex SQL query with
+    multi-level CTEs, handle a self-join across three tables, apply window functions with the right
+    PARTITION BY logic — and watch what happens. The horse hallucinates column names that don't exist,
+    invents table aliases, produces a query that looks syntactically perfect and is logically wrong in
+    a way that only fails at runtime on edge cases. The bak bak continues, but now it's confident nonsense.
+    <strong>This is where the lagam matters most.</strong> Prompt guardrails, schema injection,
+    output validators, test-case gates — the full harness, not just a loose strap.
+  </p>
+
+  <p>
+    Agentic AI — where the LLM makes decisions, calls tools, loops on its own output —
+    is a drunken horse with the stable door open. It can do extraordinary things.
+    I've built 40-plus test cases on multi-agent systems, and I will tell you with complete
+    sincerity: the moments of brilliance are real, and they require infrastructure-grade
+    controls around them to not become moments of elegant, confident catastrophe.
+  </p>
+
+  <div class="pull-quote">
+    <p>
+      "Give it free reins (no lagam) and you're gone for toss.
+      Give it the lagam (reins, with intention) and it can do wonders."
+    </p>
+  </div>
+
+  <p>
+    The most valuable skill in applied AI right now is not knowing which model to use.
+    It's knowing how to write a harness. System prompts, schema contracts,
+    retrieval architecture, guardrail layers, fallback handlers.
+    The boring stuff. The infrastructure of control.
+  </p>
+
+  <p>
+    The horse is ready. The scotch was always going to be there.
+    The question is whether you're a rider or a spectator.
+  </p>
+
+  <hr class="closing-rule" />
+
+  <div class="closing-note">
+    <p>
+      🥃 "The best prompt engineers are not writers. They're stable managers."
+    </p>
+    <div class="tagline">ssimha · The Pipeline Review · June 2026</div>
+  </div>
+
+</main>
+
+
+<footer>
+  <p>
+    <a href="https://ssimha.github.io">ssimha.github.io</a>
+    &nbsp;·&nbsp;
+    Written for engineers who've argued with a hallucinating LLM at midnight
+  </p>
+</footer>
+
+</body>
+</html>
