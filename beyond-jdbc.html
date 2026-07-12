@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beyond JDBC: Why Agents Need Both a Driver (MCP) and a Dictionary (OSI)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans:ital@1&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-deep: #0c2338;
+    --navy: #0f2b45;
+    --navy-light: #16385a;
+    --grid-line: rgba(180, 210, 230, 0.08);
+    --grid-line-strong: rgba(180, 210, 230, 0.16);
+    --paper: #f4f2ea;
+    --paper-dim: #e9e6da;
+    --ink: #16232f;
+    --ink-soft: #4a5a68;
+    --off-white: #eef1f4;
+    --amber: #e2a13d;
+    --amber-dim: #a97a2e;
+    --teal: #5fc3ba;
+    --teal-dim: #3d8a83;
+    --line-white: rgba(238,241,244,0.9);
+    --mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+    --sans: 'IBM Plex Sans', -apple-system, sans-serif;
+  }
+
+  *{ box-sizing: border-box; margin: 0; padding: 0; }
+
+  html{ scroll-behavior: smooth; }
+
+  body{
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.65;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+
+  a{ color: var(--amber-dim); }
+
+  .wrap{ max-width: 860px; margin: 0 auto; padding: 0 28px; }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    position: relative;
+    background:
+      linear-gradient(180deg, var(--navy-deep) 0%, var(--navy) 100%);
+    color: var(--off-white);
+    overflow: hidden;
+    padding: 0 0 70px 0;
+  }
+  .hero::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 34px 34px;
+    pointer-events: none;
+  }
+  .hero::after{
+    content:"";
+    position:absolute; inset:0;
+    background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(226,161,61,0.10), transparent 70%);
+    pointer-events:none;
+  }
+
+  .hero-inner{ position: relative; padding-top: 56px; }
+
+  .eyebrow{
+    font-family: var(--mono);
+    font-size: 12.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--teal);
+    display:flex;
+    align-items:center;
+    gap: 10px;
+    margin-bottom: 34px;
+  }
+  .eyebrow .dot{ width:6px; height:6px; background: var(--amber); border-radius:1px; transform: rotate(45deg); flex-shrink:0; }
+  .eyebrow .rule{ flex:1; height:1px; background: var(--grid-line-strong); }
+
+  h1.title{
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: clamp(30px, 5vw, 46px);
+    line-height: 1.18;
+    letter-spacing: -0.01em;
+    max-width: 760px;
+  }
+  h1.title .accent-amber{ color: var(--amber); }
+  h1.title .accent-teal{ color: var(--teal); }
+
+  .subtitle{
+    margin-top: 20px;
+    max-width: 620px;
+    font-size: 18px;
+    color: rgba(238,241,244,0.72);
+    font-weight: 400;
+  }
+
+  .byline{
+    margin-top: 34px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: rgba(238,241,244,0.55);
+  }
+
+  /* schematic plug + book */
+  .schematic{
+    margin-top: 56px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap: 0;
+    padding: 30px 0 8px 0;
+  }
+  .schem-node{
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+    width: 150px;
+  }
+  .schem-icon{
+    width: 74px; height:74px;
+    border: 1.5px solid;
+    display:flex; align-items:center; justify-content:center;
+    position: relative;
+    background: rgba(238,241,244,0.02);
+  }
+  .schem-icon.amber{ border-color: var(--amber); color: var(--amber); }
+  .schem-icon.teal{ border-color: var(--teal); color: var(--teal); }
+  .schem-icon svg{ width: 34px; height: 34px; }
+
+  .schem-icon::before, .schem-icon::after{
+    content:""; position:absolute; width:6px; height:6px;
+    border: 1px solid currentColor; opacity:0.7;
+  }
+  .schem-icon::before{ top:-3.5px; left:-3.5px; border-right:none; border-bottom:none; }
+  .schem-icon::after{ bottom:-3.5px; right:-3.5px; border-left:none; border-top:none; }
+
+  .schem-label{ font-family: var(--mono); font-size: 12px; text-align:center; line-height:1.5; }
+  .schem-label .role{ display:block; text-transform:uppercase; letter-spacing:0.08em; font-size:10.5px; margin-top:2px; opacity:0.6; }
+
+  .schem-connector{
+    flex: 1;
+    max-width: 130px;
+    height: 1px;
+    background: repeating-linear-gradient(90deg, var(--grid-line-strong) 0 6px, transparent 6px 11px);
+    position: relative;
+    margin-top: -22px;
+  }
+  .schem-connector::before, .schem-connector::after{
+    content:""; position:absolute; top:-3px; width:7px; height:7px;
+    border-radius:50%; background: var(--grid-line-strong);
+  }
+  .schem-connector::before{ left:0; }
+  .schem-connector::after{ right:0; }
+
+  /* ---------- BODY SECTIONS ---------- */
+  main{ padding: 64px 0 20px; }
+  section{ margin-bottom: 62px; }
+
+  h2{
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    margin-bottom: 20px;
+    display:flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+  h2 .num{
+    font-size: 13px;
+    color: var(--amber-dim);
+    opacity: 0.8;
+  }
+
+  h3{
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 600;
+    margin: 26px 0 10px;
+  }
+
+  p{ margin-bottom: 16px; color: var(--ink); }
+  p.lede{ font-size: 19px; color: var(--ink); font-style: italic; font-weight: 400; }
+
+  strong{ font-weight: 600; }
+  .tag-mcp{ color: var(--amber-dim); font-weight: 600; }
+  .tag-osi{ color: var(--teal-dim); font-weight: 600; }
+
+  /* callout / annotation box */
+  .callout{
+    position: relative;
+    border: 1px solid var(--ink);
+    background: var(--off-white);
+    padding: 22px 24px 20px;
+    margin: 28px 0;
+  }
+  .callout::before, .callout::after,
+  .callout .c-tl, .callout .c-br{ display:none; }
+  .callout-corner{
+    position:absolute; width:9px; height:9px; border: 1.5px solid var(--ink);
+  }
+  .callout-corner.tl{ top:-1px; left:-1px; border-right:none; border-bottom:none; }
+  .callout-corner.br{ bottom:-1px; right:-1px; border-left:none; border-top:none; }
+  .callout-label{
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+    margin-bottom: 10px;
+  }
+  .callout p{ margin-bottom: 0; font-size: 15.5px; }
+
+  /* two-column role cards */
+  .dual{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin: 26px 0 10px;
+  }
+  @media (max-width: 620px){ .dual{ grid-template-columns: 1fr; } }
+
+  .role-card{
+    border: 1px solid var(--paper-dim);
+    background: #fff;
+    padding: 22px;
+    position: relative;
+    border-top: 3px solid;
+  }
+  .role-card.mcp{ border-top-color: var(--amber); }
+  .role-card.osi{ border-top-color: var(--teal); }
+
+  .role-tag{
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .role-card.mcp .role-tag{ color: var(--amber-dim); }
+  .role-card.osi .role-tag{ color: var(--teal-dim); }
+
+  .role-name{ font-family: var(--mono); font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .role-desc{ font-size: 15px; color: var(--ink-soft); }
+
+  /* flow diagram */
+  .diagram{
+    border: 1px solid var(--ink);
+    background: var(--navy-deep);
+    padding: 36px 22px;
+    margin: 30px 0;
+    position: relative;
+    overflow-x: auto;
+  }
+  .diagram::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 26px 26px;
+    pointer-events:none;
+  }
+  .diagram-title{
+    position: relative;
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--teal);
+    margin-bottom: 26px;
+  }
+
+  .flow{ position: relative; display:flex; flex-direction:column; align-items:center; gap: 0; min-width: 320px; }
+  .flow-box{
+    width: 100%;
+    max-width: 480px;
+    border: 1.5px solid var(--off-white);
+    background: rgba(238,241,244,0.03);
+    color: var(--off-white);
+    padding: 14px 18px;
+    font-family: var(--mono);
+    font-size: 13.5px;
+    text-align: center;
+  }
+  .flow-box.amber{ border-color: var(--amber); }
+  .flow-box.teal{ border-color: var(--teal); }
+  .flow-box .fb-title{ font-weight: 700; font-size: 14.5px; letter-spacing: 0.01em; }
+  .flow-box .fb-sub{ margin-top: 6px; font-size: 12px; color: rgba(238,241,244,0.6); font-family: var(--sans); font-style: italic; }
+
+  .flow-arrow{
+    color: rgba(238,241,244,0.4);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 8px 0;
+    text-align: center;
+    line-height: 1.4;
+  }
+  .flow-arrow .arrow-glyph{ font-size: 16px; display:block; color: rgba(238,241,244,0.35); }
+
+  /* native vs patched */
+  .split{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin: 26px 0;
+  }
+  @media (max-width: 620px){ .split{ grid-template-columns: 1fr; } }
+  .split-panel{
+    border: 1px dashed var(--ink-soft);
+    padding: 20px;
+    background: var(--off-white);
+  }
+  .split-panel h4{
+    font-family: var(--mono); font-size: 14px; margin-bottom: 10px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .split-panel .swatch{ width:10px; height:10px; display:inline-block; }
+  .split-panel.native .swatch{ background: var(--teal); }
+  .split-panel.patched .swatch{ background: var(--amber); }
+  .split-panel p{ font-size: 14.5px; margin-bottom: 0; }
+
+  /* stack diagram */
+  .stack{ margin: 30px 0; }
+  .stack-layer{
+    border: 1.5px solid var(--ink);
+    padding: 20px 24px;
+    background: #fff;
+    position: relative;
+  }
+  .stack-layer + .stack-layer{ border-top: none; }
+  .stack-layer.top{ background: var(--off-white); }
+  .stack-layer.bottom{ background: var(--navy-deep); color: var(--off-white); border-color: var(--teal); }
+  .stack-tag{
+    font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.1em; margin-bottom: 8px; color: var(--ink-soft);
+  }
+  .stack-layer.bottom .stack-tag{ color: var(--teal); }
+  .stack-title{ font-family: var(--mono); font-weight: 700; font-size: 16px; margin-bottom: 6px; }
+  .stack-desc{ font-size: 14.5px; color: var(--ink-soft); }
+  .stack-layer.bottom .stack-desc{ color: rgba(238,241,244,0.65); }
+  .stack-connector{
+    text-align:center; font-family: var(--mono); font-size: 11px; color: var(--ink-soft);
+    padding: 6px 0; background: var(--paper); border-left: 1.5px solid var(--ink); border-right: 1.5px solid var(--ink);
+  }
+
+  /* stat highlight */
+  .stat-row{
+    display:flex; gap: 24px; margin: 30px 0; flex-wrap: wrap;
+  }
+  .stat{ flex: 1; min-width: 160px; border-top: 2px solid var(--amber); padding-top: 12px; }
+  .stat .num{ font-family: var(--mono); font-size: 34px; font-weight: 700; color: var(--ink); }
+  .stat .lbl{ font-size: 13.5px; color: var(--ink-soft); margin-top: 4px; }
+
+  /* nameplate / adoption cards */
+  .plates{ display:grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 26px 0; }
+  @media (max-width: 620px){ .plates{ grid-template-columns: 1fr; } }
+  .plate{
+    border: 1.5px solid var(--ink);
+    padding: 22px;
+    background: #fff;
+  }
+  .plate-head{
+    display:flex; justify-content:space-between; align-items:baseline;
+    border-bottom: 1px solid var(--paper-dim); padding-bottom: 10px; margin-bottom: 12px;
+  }
+  .plate-name{ font-family: var(--mono); font-weight: 700; font-size: 17px; }
+  .plate.mcp .plate-name{ color: var(--amber-dim); }
+  .plate.osi .plate-name{ color: var(--teal-dim); }
+  .plate-license{ font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); border: 1px solid var(--paper-dim); padding: 3px 7px; }
+  .plate dl{ display:grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 14px; }
+  .plate dt{ color: var(--ink-soft); font-family: var(--mono); font-size: 12px; }
+  .plate dd{ font-weight: 500; }
+
+  /* footer */
+  footer{
+    border-top: 1px solid var(--paper-dim);
+    margin-top: 40px;
+    padding: 34px 0 60px;
+  }
+  footer p{ font-family: var(--mono); font-size: 12.5px; color: var(--ink-soft); }
+
+  /* fade-in on scroll */
+  .fade{ opacity: 0; transform: translateY(14px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .fade.in{ opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="wrap hero-inner">
+    <div class="eyebrow"><span class="dot"></span>THE PIPELINE REVIEW <span class="rule"></span> ARCHITECTURE</div>
+    <h1 class="title">Beyond JDBC: why agents need both a <span class="accent-amber">driver</span> <span style="color:rgba(238,241,244,0.5); font-weight:400;">(MCP)</span> and a <span class="accent-teal">dictionary</span> <span style="color:rgba(238,241,244,0.5); font-weight:400;">(OSI)</span></h1>
+    <p class="subtitle">ODBC and JDBC solved how applications connect to databases. Agents have the same problem twice over — how to connect, and what the numbers actually mean once they arrive.</p>
+    <div class="byline">SIRISH SIMHA — ssimha.github.io</div>
+
+    <div class="schematic">
+      <div class="schem-node">
+        <div class="schem-icon amber">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 2v4M15 2v4M6 8h12l-1 5a5 5 0 0 1-10 0L6 8z"/><path d="M12 17v3M9 22h6"/></svg>
+        </div>
+        <div class="schem-label">MCP<span class="role">the driver</span></div>
+      </div>
+      <div class="schem-connector"></div>
+      <div class="schem-node">
+        <div class="schem-icon teal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5v-17z"/><path d="M4 19a2.5 2.5 0 0 1 2.5-2.5H20"/></svg>
+        </div>
+        <div class="schem-label">OSI<span class="role">the dictionary</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <section class="fade">
+    <p class="lede">Every data engineer of a certain age remembers the moment ODBC and JDBC stopped being "nice to have." Before them, every application had its own bespoke driver for every database — a combinatorial mess. ODBC/JDBC didn't move the intelligence anywhere; they just gave everyone a common wire format to talk to a database, regardless of vendor.</p>
+    <p>Agentic AI is going through the exact same growing pain right now, except the mess isn't just "how do I connect" — it's also "how does the agent know what the numbers it gets back actually <em>mean</em>." Two standards are converging to solve this, and people keep conflating them. Let's separate them cleanly, with a retail example simple enough that the architecture stops being abstract.</p>
+  </section>
+
+  <section class="fade">
+    <h2><span class="num">01</span> Two very different jobs</h2>
+    <div class="dual">
+      <div class="role-card mcp">
+        <div class="role-tag">The driver</div>
+        <div class="role-name">MCP</div>
+        <div class="role-desc">Model Context Protocol — the connectivity layer. A standard way for an agent to call a tool or read a data source, regardless of what's behind it. The ODBC/JDBC equivalent.</div>
+      </div>
+      <div class="role-card osi">
+        <div class="role-tag">The dictionary</div>
+        <div class="role-name">OSI</div>
+        <div class="role-desc">Open Semantic Interchange — the meaning layer. A shared, vendor-neutral definition of what a metric like "net revenue" actually is, independent of which engine computes it.</div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="callout-corner tl"></div><div class="callout-corner br"></div>
+      <div class="callout-label">Worth being precise about</div>
+      <p><span class="tag-mcp">MCP never uses an LLM.</span> An MCP server is deterministic code — it receives a structured request, executes a lookup or a query, and returns a structured result. The only place an LLM shows up is in the <strong>agent</strong> sitting on top of MCP, deciding which tool to call and interpreting what comes back. MCP is the action layer; the agent is the reasoning layer — same way a JDBC driver has no opinion about the business logic that decided to run a query.</p>
+    </div>
+  </section>
+
+  <section class="fade">
+    <h2><span class="num">02</span> A retail example</h2>
+    <p>Say a store manager asks an agent: <em>"What was our net revenue for the North region last month, and how does that compare to active customers?"</em></p>
+    <p>Without semantic grounding, the agent has to guess from raw columns — <span style="font-family:var(--mono); font-size:14px;">amount</span>, <span style="font-family:var(--mono); font-size:14px;">discount</span>, <span style="font-family:var(--mono); font-size:14px;">refund_flag</span> — and infer what "net revenue" means. Different runs, different answers. Hallucination with a straight face. Here's the flow once <span class="tag-osi">OSI</span> is resolved by the <span class="tag-mcp">MCP</span> layer instead:</p>
+
+    <div class="diagram">
+      <div class="diagram-title">Request flow — store manager query, resolved</div>
+      <div class="flow">
+        <div class="flow-box teal">
+          <div class="fb-title">AGENT (LLM)</div>
+          <div class="fb-sub">"I need net_revenue and active_customer count — region: North, period: last month"</div>
+        </div>
+        <div class="flow-arrow"><span class="arrow-glyph">↓</span>MCP tool call · JSON-RPC · no LLM involved</div>
+        <div class="flow-box amber">
+          <div class="fb-title">MCP SERVER (deterministic)</div>
+          <div class="fb-sub">Looks up "net_revenue" against the OSI definition: gross_sales − discounts − refunds</div>
+        </div>
+        <div class="flow-arrow"><span class="arrow-glyph">↓</span>generates the query for whichever engine sits behind it</div>
+        <div class="flow-box">
+          <div class="fb-title">WAREHOUSE / DB</div>
+          <div class="fb-sub">Executes → structured result → back to agent</div>
+        </div>
+      </div>
+    </div>
+    <p>The agent never touches a raw table. It asks for a named, governed metric and gets back a number it can trust — with enough structure to explain how that number was derived if the manager asks "why."</p>
+  </section>
+
+  <section class="fade">
+    <h2><span class="num">03</span> Two ways to wire OSI in</h2>
+    <p>This is where it gets practical, and where most teams will actually live.</p>
+    <div class="split">
+      <div class="split-panel native">
+        <h4><span class="swatch"></span>OSI-native tools</h4>
+        <p>The tool reads OSI YAML definitions directly and resolves them internally — the MCP server in front is a thin passthrough. dbt Labs open-sourced MetricFlow as the OSI reference implementation; Cube, AtScale, and Looker are on the same path. If your stack already runs one of these, OSI compliance is close to "turn it on."</p>
+      </div>
+      <div class="split-panel patched">
+        <h4><span class="swatch"></span>OSI-patched tools</h4>
+        <p>Most real estates run an older warehouse or a plain schema with zero concept of semantics — and won't become OSI-native anytime soon. Here the intelligence lives <strong>in the MCP server itself</strong>: it reads the OSI YAML and translates it into whatever query the legacy backend already understands. The old system never knows OSI exists.</p>
+      </div>
+    </div>
+    <p>For most teams patching an existing warehouse into an agent stack, the patched pattern — OSI's intelligence sitting inside the MCP server, same role an ODBC driver played translating a common interface into a vendor-specific dialect — is where you'll actually start.</p>
+  </section>
+
+  <section class="fade">
+    <h2><span class="num">04</span> Why this cuts hallucination</h2>
+    <p>The failure mode OSI targets isn't the agent being "dumb" — it's the agent being forced to <em>infer</em> business logic from raw schema every single time, with no way to stay consistent across runs. Ground it in a shared definition instead, and there's nothing left to guess.</p>
+    <div class="stat-row">
+      <div class="stat">
+        <div class="num">~3×</div>
+        <div class="lbl">accuracy improvement reported by dbt Labs when grounding LLM queries in an OSI-governed semantic layer, vs. raw table inference</div>
+      </div>
+      <div class="stat">
+        <div class="num">1</div>
+        <div class="lbl">definition of a metric, resolved once, reused by every agent and every dashboard — instead of re-derived per prompt</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="fade">
+    <h2><span class="num">05</span> A semantic layer for agents — not the one your BI team already has</h2>
+    <p>This is the distinction that trips people up, because "semantic layer" already means something in the BI world. Your existing semantic layer — inside Tableau, Power BI, Looker dashboards — is built for <strong>humans</strong>: optimized for click-through exploration and visual consistency, usually inside one vendor's walled garden.</p>
+    <p><span class="tag-osi">OSI</span> sits underneath that, as the canonical, tool-agnostic source of truth both the human-facing layer <em>and</em> every agent's MCP tools draw from:</p>
+
+    <div class="stack">
+      <div class="stack-layer top">
+        <div class="stack-tag">Top — built for humans</div>
+        <div class="stack-title">Common / BI semantic layer</div>
+        <div class="stack-desc">Tableau, Power BI, Looker dashboards — click-through exploration, visual consistency</div>
+      </div>
+      <div class="stack-connector">↑ both draw from the same underlying definitions ↑</div>
+      <div class="stack-layer bottom">
+        <div class="stack-tag">Bottom — built for machines</div>
+        <div class="stack-title">OSI</div>
+        <div class="stack-desc">Vendor-neutral YAML: net_revenue, active_customer, churn_rate — defined once, consumed by agents, MCP servers, and query engines</div>
+      </div>
+    </div>
+    <p>Define "net revenue" once at the bottom. The dashboard and the agent both inherit it. Nobody re-derives it twice, and nobody drifts.</p>
+  </section>
+
+  <section class="fade">
+    <h2><span class="num">06</span> Who built it, and how far it's spread</h2>
+    <div class="plates">
+      <div class="plate mcp">
+        <div class="plate-head">
+          <div class="plate-name">MCP</div>
+          <div class="plate-license">MIT</div>
+        </div>
+        <dl>
+          <dt>Origin</dt><dd>Anthropic, Nov 2024</dd>
+          <dt>Governance</dt><dd>Linux Foundation — Agentic AI Foundation</dd>
+          <dt>Reach</dt><dd>Every major AI platform · 18,000+ public servers · tens of millions of monthly SDK downloads</dd>
+        </dl>
+      </div>
+      <div class="plate osi">
+        <div class="plate-head">
+          <div class="plate-name">OSI</div>
+          <div class="plate-license">Apache 2.0</div>
+        </div>
+        <dl>
+          <dt>Origin</dt><dd>Snowflake + partners, Coalesce, Sept 2025</dd>
+          <dt>v1.0</dt><dd>Published on GitHub, Jan 27 2026</dd>
+          <dt>Reach</dt><dd>60+ member orgs — Databricks, Google, AWS, Salesforce, dbt Labs, ThoughtSpot, AtScale, Qlik, and others</dd>
+        </dl>
+      </div>
+    </div>
+    <p>Neither is finished. Both are moving fast enough that "watch the spec" is a legitimate line item on any architecture roadmap this year — but the shape of the stack is already clear: the agent reasons, MCP acts, and OSI defines what the numbers mean underneath all of it.</p>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <p>THE PIPELINE REVIEW — SIRISH SIMHA</p>
+</footer>
+
+<script>
+  const items = document.querySelectorAll('.fade');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: 0.12 });
+  items.forEach(i => io.observe(i));
+</script>
+
+</body>
+</html>
