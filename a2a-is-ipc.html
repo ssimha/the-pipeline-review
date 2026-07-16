@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A2A Is IPC Wearing a Better Suit — The Pipeline Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F4EE;
+    --ink:#181C1F;
+    --ink-soft:#4B5259;
+    --blueprint:#2F5D8A;
+    --blueprint-dim:#a9c0d6;
+    --signal:#C97A2E;
+    --rule:#D8D3C4;
+    --panel:#12232E;
+    --panel-line: rgba(169,192,214,0.35);
+    --panel-text:#DCE7EF;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Source Serif 4', serif;
+    font-size:18px;
+    line-height:1.65;
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:0 24px 90px;}
+
+  /* Masthead */
+  .masthead{
+    max-width:760px; margin:0 auto; padding:36px 24px 18px;
+    border-bottom:3px solid var(--ink);
+  }
+  .masthead-row{
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--ink-soft);
+  }
+  .masthead h1.brand{
+    font-family:'Fraunces', serif; font-weight:700; font-style:italic;
+    font-size:44px; margin:8px 0 4px; letter-spacing:-0.01em;
+  }
+  .masthead .tagline{
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:var(--ink-soft);
+    letter-spacing:.04em;
+  }
+
+  /* Article head */
+  .kicker{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--blueprint); margin-top:46px;
+  }
+  h1.title{
+    font-family:'Fraunces', serif; font-weight:600; font-size:42px; line-height:1.08;
+    margin:14px 0 10px; letter-spacing:-0.01em;
+  }
+  .deck{
+    font-family:'Source Serif 4', serif; font-style:italic; color:var(--ink-soft);
+    font-size:21px; line-height:1.5; margin:0 0 22px; max-width:640px;
+  }
+  .byline{
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:var(--ink-soft);
+    border-top:1px solid var(--rule); border-bottom:1px solid var(--rule);
+    padding:10px 0; margin-bottom:36px;
+  }
+
+  h2{
+    font-family:'Fraunces', serif; font-weight:600; font-size:27px;
+    margin:52px 0 6px; letter-spacing:-0.005em;
+  }
+  h2 .num{
+    font-family:'IBM Plex Mono', monospace; font-weight:400; font-size:14px;
+    color:var(--signal); display:block; letter-spacing:.1em; margin-bottom:6px;
+  }
+  p{margin:16px 0;}
+  strong{font-weight:600;}
+  code, .mono{font-family:'IBM Plex Mono', monospace; font-size:0.86em; background:rgba(47,93,138,0.08); padding:1px 5px; border-radius:3px; color:var(--blueprint);}
+  ul{padding-left:22px;}
+  li{margin:8px 0;}
+  .pull{
+    font-family:'Fraunces', serif; font-style:italic; font-weight:500; font-size:24px;
+    color:var(--ink); border-left:3px solid var(--signal); padding:2px 0 2px 22px;
+    margin:36px 0; line-height:1.4;
+  }
+
+  /* Blueprint diagram panel */
+  .panel{
+    background:var(--panel); color:var(--panel-text);
+    margin:38px -24px; padding:34px 24px 30px;
+    background-image:
+      linear-gradient(var(--panel-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--panel-line) 1px, transparent 1px);
+    background-size: 28px 28px;
+    border-top:1px solid var(--panel-line);
+    border-bottom:1px solid var(--panel-line);
+  }
+  .panel-label{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--blueprint-dim); margin-bottom:14px;
+  }
+  .panel svg{width:100%; height:auto; display:block;}
+  .panel-cap{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--blueprint-dim);
+    margin-top:14px; line-height:1.6;
+  }
+
+  .footnote{
+    font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--ink-soft);
+    margin-top:6px;
+  }
+
+  table.spec{
+    width:100%; border-collapse:collapse; font-family:'IBM Plex Mono', monospace; font-size:13px;
+    margin:20px 0 30px;
+  }
+  table.spec th{
+    text-align:left; text-transform:uppercase; letter-spacing:.06em; font-size:11px;
+    color:var(--ink-soft); border-bottom:2px solid var(--ink); padding:8px 10px 8px 0;
+  }
+  table.spec td{ border-bottom:1px solid var(--rule); padding:9px 10px 9px 0; vertical-align:top;}
+
+  .cta{
+    margin-top:70px; padding-top:26px; border-top:3px solid var(--ink);
+  }
+  .cta h3{font-family:'Fraunces', serif; font-size:22px; margin:0 0 8px;}
+  .cta p{margin:6px 0;}
+  .cta a{color:var(--blueprint); text-decoration:none; border-bottom:1px solid var(--blueprint);}
+
+  @media (max-width:600px){
+    body{font-size:16.5px;}
+    h1.title{font-size:32px;}
+    .deck{font-size:18px;}
+    .panel{margin:30px -16px; padding:24px 16px;}
+    .wrap{padding:0 16px 70px;}
+    .masthead{padding:28px 16px 16px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="masthead-row">
+    <span>The Pipeline Review</span>
+    <span>Vol. I, No. 4</span>
+  </div>
+  <h1 class="brand">The Pipeline Review</h1>
+  <div class="tagline">Data systems, read closely.</div>
+</div>
+
+<div class="wrap">
+  <div class="kicker">Protocols &amp; Plumbing</div>
+  <h1 class="title">A2A Is IPC Wearing a Better Suit</h1>
+  <p class="deck">Google's Agent2Agent protocol is being talked about like a new law of physics. It isn't. It's the fifth generation of a problem distributed systems engineers have been solving since the 1980s — and the genealogy tells you exactly what to trust, and what to double-check, before you wire two agents together.</p>
+  <div class="byline">Sirish Simha · The Pipeline Review</div>
+
+  <p>Every few years, distributed computing reinvents inter-process communication and gives it a new name so it feels like the industry has never solved this before. Sockets became RPC. RPC became SOAP. SOAP became REST and gRPC. Now REST and gRPC are becoming <strong>A2A</strong> — the Agent2Agent protocol, originally shipped by Google in April 2025 and handed to the Linux Foundation two months later, in June 2025, to run under neutral governance.</p>
+
+  <p>None of that is a criticism of A2A. It's a genuinely well-specified protocol solving a genuinely real problem: how does an autonomous agent built on LangGraph talk to one built on CrewAI, hosted by a company it has never integrated with, without a bespoke adapter for every pair? The point is different — if you understand A2A as IPC with a lineage, you stop being surprised by what it does, and you start asking the questions that lineage teaches you to ask: who's trusted, who's versioned, what happens when the other side is slow.</p>
+
+  <h2><span class="num">01 — Lineage</span>Four generations, one problem</h2>
+  <p>Strip away the branding and every generation below is solving the same three things: how does one process find another, how do they agree on a message shape, and how do they survive the other side being unreachable.</p>
+
+  <div class="panel">
+    <div class="panel-label">Fig. 1 — IPC lineage stack</div>
+    <svg viewBox="0 0 700 330" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 Z" fill="#8FAFC9"/>
+        </marker>
+      </defs>
+      <!-- vertical connector -->
+      <line x1="60" y1="45" x2="60" y2="285" stroke="#3a5064" stroke-width="1.5" stroke-dasharray="3,4"/>
+
+      <!-- Layer 1 -->
+      <rect x="90" y="20" width="560" height="50" fill="none" stroke="#8FAFC9" stroke-width="1.3"/>
+      <text x="105" y="40" fill="#DCE7EF" font-family="IBM Plex Mono" font-size="13" font-weight="600">TCP/IP · Unix sockets · pipes</text>
+      <text x="105" y="58" fill="#8FAFC9" font-family="IBM Plex Mono" font-size="11">1980s — raw byte streams between processes, no shared schema</text>
+      <circle cx="60" cy="45" r="4" fill="#C97A2E"/>
+
+      <!-- arrow down -->
+      <line x1="60" y1="70" x2="60" y2="85" stroke="#3a5064" stroke-width="1.5" marker-end="url(#arrow1)"/>
+
+      <!-- Layer 2 -->
+      <rect x="90" y="88" width="560" height="50" fill="none" stroke="#8FAFC9" stroke-width="1.3"/>
+      <text x="105" y="108" fill="#DCE7EF" font-family="IBM Plex Mono" font-size="13" font-weight="600">Sun RPC · CORBA · DCOM</text>
+      <text x="105" y="126" fill="#8FAFC9" font-family="IBM Plex Mono" font-size="11">1990s — call a remote function like a local one; IDL defines the contract</text>
+      <circle cx="60" cy="113" r="4" fill="#C97A2E"/>
+
+      <line x1="60" y1="138" x2="60" y2="153" stroke="#3a5064" stroke-width="1.5" marker-end="url(#arrow1)"/>
+
+      <!-- Layer 3 -->
+      <rect x="90" y="156" width="560" height="50" fill="none" stroke="#8FAFC9" stroke-width="1.3"/>
+      <text x="105" y="176" fill="#DCE7EF" font-family="IBM Plex Mono" font-size="13" font-weight="600">SOAP · REST · gRPC</text>
+      <text x="105" y="194" fill="#8FAFC9" font-family="IBM Plex Mono" font-size="11">2000s–2010s — RPC over HTTP; JSON/protobuf replace binary IDLs</text>
+      <circle cx="60" cy="181" r="4" fill="#C97A2E"/>
+
+      <line x1="60" y1="206" x2="60" y2="221" stroke="#3a5064" stroke-width="1.5" marker-end="url(#arrow1)"/>
+
+      <!-- Layer 4 -->
+      <rect x="90" y="224" width="560" height="60" fill="none" stroke="#C97A2E" stroke-width="1.6"/>
+      <text x="105" y="247" fill="#F3E3D0" font-family="IBM Plex Mono" font-size="13.5" font-weight="600">A2A (Agent2Agent)</text>
+      <text x="105" y="266" fill="#E3B98A" font-family="IBM Plex Mono" font-size="11">2025 — JSON-RPC/gRPC + SSE; the IDL is an "Agent Card," the payload is intent</text>
+      <circle cx="60" cy="253" r="4" fill="#C97A2E"/>
+    </svg>
+    <div class="panel-cap">Each layer adds discovery and trust to the layer below it. A2A's actual novelty isn't the transport — it's <span class="mono">what</span> gets exchanged: capability descriptions and task state, not just data.</div>
+  </div>
+
+  <p>The honest way to read this stack: A2A didn't invent remote invocation. It inherited JSON-RPC's wire format, borrowed SSE from web streaming, and added one genuinely new layer on top — a discovery document (the <strong>Agent Card</strong>) that plays the same role a WSDL file played for SOAP or an IDL played for CORBA, except it describes what an agent <em>can do</em> rather than what functions it exposes.</p>
+
+  <h2><span class="num">02 — Anatomy</span>What A2A actually specifies</h2>
+  <p>Underneath the "agent" language, A2A is a small, disciplined spec. Four primitives do almost all the work:</p>
+
+  <table class="spec">
+    <tr><th>Primitive</th><th>Role</th></tr>
+    <tr><td>Agent Card</td><td>A signed JSON document at a well-known URL announcing an agent's skills, auth requirements, and supported modalities — discovery, not execution.</td></tr>
+    <tr><td>Task</td><td>The unit of work. Has an explicit lifecycle — submitted, working, input-required, completed, failed — so a caller always knows where a long-running job stands.</td></tr>
+    <tr><td>Message</td><td>A turn in the conversation between client and remote agent, carrying text, files, or structured data.</td></tr>
+    <tr><td>Artifact</td><td>The output a task produces — a document, a dataset, a rendered result — returned as a first-class typed object, not buried in a text blob.</td></tr>
+  </table>
+
+  <p>A2A reached its v1.0 milestone in early 2026, and the changes there are exactly what an IPC veteran would expect a maturing protocol to add: <strong>signed Agent Cards</strong> (so a receiving agent can verify a card actually came from the domain it claims to), <strong>multi-tenancy</strong> (one endpoint, many agents — useful for SaaS), <strong>dual bindings</strong> over both JSON-RPC and gRPC, and formal version negotiation between v0.3 and v1.0 clients. That is the same maturity curve SOAP, then REST, then gRPC each went through: ship loose, then bolt on identity and versioning once production traffic exposes the gaps.</p>
+
+  <div class="panel">
+    <div class="panel-label">Fig. 2 — client / remote agent exchange</div>
+    <svg viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 Z" fill="#8FAFC9"/>
+        </marker>
+      </defs>
+      <!-- Client box -->
+      <rect x="20" y="30" width="150" height="60" fill="none" stroke="#DCE7EF" stroke-width="1.5"/>
+      <text x="95" y="55" fill="#DCE7EF" font-family="IBM Plex Mono" font-size="13" font-weight="600" text-anchor="middle">Client Agent</text>
+      <text x="95" y="74" fill="#8FAFC9" font-family="IBM Plex Mono" font-size="10.5" text-anchor="middle">(orchestrator)</text>
+
+      <!-- Remote box -->
+      <rect x="530" y="30" width="150" height="60" fill="none" stroke="#DCE7EF" stroke-width="1.5"/>
+      <text x="605" y="55" fill="#DCE7EF" font-family="IBM Plex Mono" font-size="13" font-weight="600" text-anchor="middle">Remote Agent</text>
+      <text x="605" y="74" fill="#8FAFC9" font-family="IBM Plex Mono" font-size="10.5" text-anchor="middle">(specialist)</text>
+
+      <!-- Agent card fetch -->
+      <line x1="170" y1="48" x2="530" y2="48" stroke="#3a5064" stroke-width="1.3" marker-end="url(#arrow2)"/>
+      <text x="350" y="42" fill="#C97A2E" font-family="IBM Plex Mono" font-size="10.5" text-anchor="middle">GET /.well-known/agent-card.json</text>
+
+      <!-- Card returned -->
+      <line x1="530" y1="66" x2="170" y2="66" stroke="#3a5064" stroke-width="1.3" marker-end="url(#arrow2)"/>
+      <text x="350" y="83" fill="#8FAFC9" font-family="IBM Plex Mono" font-size="10.5" text-anchor="middle">signed Agent Card (skills, auth, modalities)</text>
+
+      <!-- Task submit -->
+      <line x1="170" y1="120" x2="530" y2="120" stroke="#C97A2E" stroke-width="1.5" marker-end="url(#arrow2)"/>
+      <text x="350" y="113" fill="#DCE7EF" font-family="IBM Plex Mono" font-size="11" text-anchor="middle">tasks/send — JSON-RPC over HTTPS (or gRPC)</text>
+
+      <!-- Task lifecycle boxes -->
+      <g font-family="IBM Plex Mono" font-size="10.5">
+        <rect x="240" y="150" width="90" height="26" fill="none" stroke="#8FAFC9"/>
+        <text x="285" y="167" fill="#DCE7EF" text-anchor="middle">submitted</text>
+        <rect x="345" y="150" width="90" height="26" fill="none" stroke="#8FAFC9"/>
+        <text x="390" y="167" fill="#DCE7EF" text-anchor="middle">working</text>
+        <rect x="450" y="150" width="110" height="26" fill="none" stroke="#8FAFC9"/>
+        <text x="505" y="167" fill="#DCE7EF" text-anchor="middle">input-required</text>
+        <line x1="330" y1="163" x2="345" y2="163" stroke="#3a5064" marker-end="url(#arrow2)"/>
+        <line x1="435" y1="163" x2="450" y2="163" stroke="#3a5064" marker-end="url(#arrow2)"/>
+      </g>
+
+      <!-- SSE stream -->
+      <line x1="530" y1="195" x2="170" y2="195" stroke="#3a5064" stroke-width="1.3" stroke-dasharray="4,3" marker-end="url(#arrow2)"/>
+      <text x="350" y="211" fill="#8FAFC9" font-family="IBM Plex Mono" font-size="10.5" text-anchor="middle">SSE stream — incremental status + partial artifacts</text>
+
+      <!-- Completed + artifact -->
+      <rect x="240" y="235" width="220" height="30" fill="none" stroke="#C97A2E" stroke-width="1.4"/>
+      <text x="350" y="255" fill="#F3E3D0" font-family="IBM Plex Mono" font-size="11" text-anchor="middle">completed → Artifact returned</text>
+    </svg>
+    <div class="panel-cap">Discovery (Agent Card) is separate from execution (Task). That split is the same reason WSDL sat apart from the SOAP call itself — it lets two parties agree on capability before they commit to a conversation.</div>
+  </div>
+
+  <div class="pull">The interesting engineering question was never "can two agents exchange JSON." It was always "who do you trust to have sent it, and what do you do when they don't answer in time." A2A's whole v1.0 changelog is that question, restated.</div>
+
+  <h2><span class="num">03 — Ecosystem</span>Why Google gave it away</h2>
+  <p>Google published A2A in April 2025 with roughly fifty launch partners, then donated the project to the Linux Foundation two months later — the same move it made with Kubernetes. A protocol that only Google controls is a protocol enterprises hedge against; a protocol governed by a neutral foundation, with a Technical Steering Committee seated by AWS, Cisco, Google, IBM Research, Microsoft, Salesforce, SAP and ServiceNow, is one they can build a five-year architecture on without worrying about a single vendor's roadmap.</p>
+  <p>It worked. By its one-year mark in April 2026, more than 150 organizations were supporting the standard, the reference implementation had passed 22,000 GitHub stars, and SDKs existed in five production languages beyond the original Python release. IBM's competing ACP effort folded into A2A in August 2025 rather than fight it. That's not a technical verdict — it's a governance verdict, and it's the more important one for anyone deciding whether to build on this.</p>
+  <p>The other piece worth being precise about: A2A is not competing with MCP, and framing them as rivals misunderstands both. MCP standardizes how a single agent talks to its own tools and data — the vertical connection. A2A standardizes how independent agents, built by different teams on different frameworks, talk to each other — the horizontal connection. You will very plausibly run both in the same system: MCP inside an agent, A2A between agents.</p>
+
+  <h2><span class="num">04 — So what</span>The lineage is the point</h2>
+  <p>If you've built anything on Sun RPC, SOAP, or gRPC, none of A2A's hard problems are new to you. Idempotency on retried tasks, backpressure when a remote agent is overloaded, versioning when a card changes shape, trust when a card claims a domain it doesn't own — these are IPC problems with forty years of prior art, now wearing agent-shaped clothes. The signed Agent Card in v1.0 exists because someone, somewhere, stood up a fake card and redirected traffic — the exact failure mode PKI solved for TLS certificates, rediscovered in a new context.</p>
+  <p>Treat A2A the way you'd treat any RPC generation you've adopted before: read the spec for what's actually new (the capability-description layer), and bring your existing distributed-systems discipline for everything else. The protocol will not protect you from a slow, unauthenticated, or badly versioned remote agent any more than gRPC protected you from a slow, unauthenticated, or badly versioned microservice. It just gives the whole industry a shared name for the contract.</p>
+
+
+</div>
+
+</body>
+</html>
