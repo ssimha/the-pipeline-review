@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Pipeline Review — Vol. 5 — Two-Phase Commit for the Agentic Age</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EDEAE1;
+    --paper-dim:#E3DFD3;
+    --ink:#1C1F26;
+    --ink-soft:#4A4F58;
+    --commit:#2F6F63;
+    --abort:#B4442E;
+    --rule:#C9C4B4;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Newsreader', Georgia, serif;
+    font-size:18px;
+    line-height:1.62;
+  }
+  .mono{font-family:'IBM Plex Mono', monospace;}
+
+  header.masthead{
+    max-width:1180px;
+    margin:0 auto;
+    padding:48px 32px 20px;
+    border-bottom:2px solid var(--ink);
+  }
+  .masthead-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .masthead-top .mono{
+    font-size:12px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+  }
+  h1.title{
+    font-size:clamp(2.1rem, 5vw, 3.4rem);
+    font-weight:600;
+    line-height:1.05;
+    margin:18px 0 8px;
+    letter-spacing:-0.01em;
+  }
+  .subtitle{
+    font-size:1.15rem;
+    font-style:italic;
+    color:var(--ink-soft);
+    max-width:46ch;
+    margin:0 0 14px;
+  }
+  .byline{
+    font-size:14px;
+    color:var(--ink-soft);
+  }
+  .byline .mono{font-size:12px;}
+
+  .layout{
+    max-width:1180px;
+    margin:0 auto;
+    display:grid;
+    grid-template-columns:220px 1fr;
+    gap:56px;
+    padding:44px 32px 80px;
+    align-items:start;
+  }
+  @media (max-width:860px){
+    .layout{grid-template-columns:1fr;}
+    aside.log{position:static !important; order:2; margin-top:36px;}
+  }
+
+  aside.log{
+    position:sticky;
+    top:32px;
+    border-left:2px solid var(--ink);
+    padding-left:18px;
+  }
+  aside.log .log-title{
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin-bottom:16px;
+  }
+  aside.log a{
+    display:block;
+    text-decoration:none;
+    color:var(--ink);
+    margin-bottom:20px;
+    font-size:13px;
+    line-height:1.4;
+  }
+  aside.log a .tag{
+    display:block;
+    font-size:10px;
+    letter-spacing:.08em;
+    color:var(--commit);
+    margin-bottom:2px;
+  }
+  aside.log a .yr{
+    color:var(--ink-soft);
+    font-size:11px;
+  }
+  aside.log a:hover .tag{color:var(--abort);}
+
+  article{max-width:70ch;}
+  article > p.lede{
+    font-size:1.22rem;
+    line-height:1.55;
+  }
+  article p{margin:0 0 22px;}
+
+  section.chapter{
+    padding-top:8px;
+    margin-top:52px;
+    border-top:1px solid var(--rule);
+  }
+  section.chapter .eyebrow{
+    display:inline-block;
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--commit);
+    margin:22px 0 6px;
+  }
+  section.chapter .eyebrow.abort{color:var(--abort);}
+  section.chapter h2{
+    font-size:1.7rem;
+    font-weight:600;
+    margin:0 0 18px;
+    line-height:1.2;
+  }
+  section.chapter .theory-tag{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-bottom:20px;
+  }
+
+  blockquote{
+    margin:26px 0;
+    padding:4px 0 4px 22px;
+    border-left:3px solid var(--commit);
+    font-style:italic;
+    color:var(--ink-soft);
+    font-size:1.05rem;
+  }
+
+  .diagram-wrap{
+    margin:20px 0 8px;
+    border:1px solid var(--rule);
+    background:var(--paper-dim);
+    padding:18px;
+  }
+  .diagram-cap{
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:10px;
+    font-family:'IBM Plex Mono', monospace;
+  }
+
+  .usecase{
+    background:var(--paper-dim);
+    border:1px solid var(--rule);
+    padding:26px 28px;
+    margin:20px 0;
+  }
+  .usecase .step{
+    display:flex;
+    gap:14px;
+    margin-bottom:16px;
+  }
+  .usecase .step:last-child{margin-bottom:0;}
+  .usecase .step .marker{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:#fff;
+    background:var(--commit);
+    padding:3px 8px;
+    height:fit-content;
+    white-space:nowrap;
+    letter-spacing:.05em;
+  }
+  .usecase .step.abort .marker{background:var(--abort);}
+  .usecase .step p{margin:0; font-size:.98rem;}
+
+  .glossary{
+    margin-top:46px;
+    border-top:2px solid var(--ink);
+    padding-top:22px;
+  }
+  .glossary h3{
+    font-size:12px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:0 0 14px;
+  }
+  .glossary dl{
+    display:grid;
+    grid-template-columns:auto 1fr;
+    column-gap:14px;
+    row-gap:8px;
+    font-size:13px;
+  }
+  .glossary dt{font-family:'IBM Plex Mono', monospace; color:var(--commit); white-space:nowrap;}
+  .glossary dd{margin:0; color:var(--ink-soft);}
+
+  footer{
+    max-width:1180px;
+    margin:0 auto;
+    padding:36px 32px 60px;
+    border-top:2px solid var(--ink);
+    font-size:13px;
+    color:var(--ink-soft);
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-top">
+    <span class="mono">The Pipeline Review</span>
+    <span class="mono">Vol. 5</span>
+  </div>
+  <h1 class="title">Two-Phase Commit for the Agentic Age</h1>
+  <p class="subtitle">Agent2Agent (A2A), the Model Context Protocol (MCP), and the Agent Payments Protocol (AP2) are new wire formats wrapped around forty-year-old distributed-systems theory. Here's the lineage.</p>
+  <p class="byline">Sirish Simha &nbsp;<span class="mono">· July 2026</span></p>
+</header>
+
+<div class="layout">
+
+  <aside class="log">
+    <div class="log-title">Transaction Log</div>
+    <a href="#begin"><span class="tag">BEGIN · 1980</span>Contract Net Protocol</a>
+    <a href="#prepare"><span class="tag">PREPARE · 1990s</span>FIPA-ACL / KQML</a>
+    <a href="#vote"><span class="tag">VOTE · 1978</span>Two-Phase Commit</a>
+    <a href="#compensate"><span class="tag">COMPENSATE · 1987</span>Saga Pattern</a>
+    <a href="#quorum"><span class="tag">QUORUM · 1982</span>Byzantine Fault Tolerance</a>
+    <a href="#architecture"><span class="tag">COMMIT · 2026</span>Architecture</a>
+    <a href="#usecase"><span class="tag">REPLAY</span>Use Case</a>
+  </aside>
+
+  <article>
+    <p class="lede">Every few years the infrastructure world rediscovers a problem the database and distributed-systems communities solved decades ago, gives it a new acronym, and ships it as if it were novel. That's not a criticism — it's how engineering works. But it's worth naming the lineage before we mistake the wrapper for the invention. This is that exercise, applied to the current stack of agent protocols: Agent2Agent (A2A), the Model Context Protocol (MCP), and the Agent Payments Protocol (AP2).</p>
+
+    <p>Strip the branding and you get three familiar problems: how do independent parties discover and delegate work to each other (solved, partially, in 1980); how do they describe what they mean when they talk (solved, partially, in the 1990s); and how do they agree on an outcome — and recover when they don't — when one party's judgment is a probabilistic language model instead of deterministic code (not solved, but not new either).</p>
+
+    <section class="chapter" id="begin">
+      <span class="eyebrow">Begin</span>
+      <h2>The Auction Nobody Remembers</h2>
+      <div class="theory-tag">Contract Net Protocol (CNP) — Reid G. Smith, 1980</div>
+      <p>Before there was an A2A Agent Card advertising a service's skills, there was the Contract Net Protocol: a manager node announces a task, eligible nodes submit bids describing how well they can do it, the manager awards the contract to the best bid, and everyone else stands down. No central scheduler, no shared memory — just an announce/bid/award cycle between independent nodes.</p>
+      <p>A2A's task delegation flow is the same shape with better tooling. An orchestrating agent needs work done; it queries an Agent Card (a machine-readable description of what an agent can do, served at a well-known address) instead of a bid message, and hands off a Task instead of awarding a contract. The auction became a lookup. The underlying coordination problem — "who among many independent, mutually distrusting parties should do this work" — is unchanged.</p>
+    </section>
+
+    <section class="chapter" id="prepare">
+      <span class="eyebrow">Prepare</span>
+      <h2>Teaching Agents to Speak</h2>
+      <div class="theory-tag">FIPA-ACL, built on KQML and speech-act theory — 1990s</div>
+      <p>Knowing an agent exists is not the same as being able to talk to it. The Foundation for Intelligent Physical Agents' Agent Communication Language (FIPA-ACL) — itself built on the earlier Knowledge Query and Manipulation Language (KQML) — tackled that in the 1990s by borrowing from linguistics. Its messages aren't raw data; they're <em>performatives</em>, borrowed from speech-act theory (Austin, Searle): <span class="mono">inform</span>, <span class="mono">request</span>, <span class="mono">cfp</span> (call for proposal), <span class="mono">propose</span>, <span class="mono">accept-proposal</span>, <span class="mono">reject-proposal</span>. The performative tells you what the message is <em>doing</em>; a shared ontology tells you what its content <em>means</em>, so two agents built by different teams don't just parse each other's bytes, they agree on semantics.</p>
+      <p>An A2A Agent Card's declared skills, input/output schemas, and authentication requirements are doing exactly this job — establishing a shared vocabulary before a Task begins — with JSON Schema standing in for FIPA's ontologies. FIPA even formalized the Contract Net exchange above as <span class="mono">fipa-contract-net</span>, a named interaction protocol built entirely out of its own performatives. The auction and the language were fused thirty years before Google fused them again.</p>
+    </section>
+
+    <section class="chapter" id="vote">
+      <span class="eyebrow">Vote</span>
+      <h2>The Commit Problem</h2>
+      <div class="theory-tag">Two-Phase Commit (2PC) — Jim Gray, ~1978</div>
+      <p>Discovery and language get two agents talking. They don't get two agents to agree on an irreversible action — like spending someone's money — atomically. That's a transaction processing problem, and it was solved for distributed databases before either of us started our careers: a coordinator asks every participant to <em>prepare</em> and vote, and only issues <em>commit</em> if every vote is yes. One dissent, and everyone rolls back. Nothing partially happens.</p>
+      <p>AP2 runs the identical protocol under a different name. An <strong>Intent Mandate</strong> — a scoped, user-signed statement of what's wanted — is the prepare phase. A <strong>Cart Mandate</strong>, produced by the merchant-side agent and checked against the Intent by the buyer-side agent, is the participant vote. A <strong>Payment Mandate</strong> is the commit. Each Mandate is a W3C Verifiable Credential (VC) — a cryptographically signed, tamper-evident digital claim — so the "vote" is a signature, not a network message, but the state machine is 2PC's, unchanged: prepare, vote, commit-or-abort.</p>
+      <blockquote>The interesting part was never how to move money. It was always how to get independent parties to agree, atomically, before doing something you can't take back.</blockquote>
+    </section>
+
+    <section class="chapter" id="compensate">
+      <span class="eyebrow">Compensate</span>
+      <h2>When the Vote Fails</h2>
+      <div class="theory-tag">Saga Pattern — Garcia-Molina &amp; Salem, 1987</div>
+      <p>2PC assumes a transaction is short enough to hold locks across every participant until everyone votes. Agent workflows rarely are — a delegated task can run for minutes, call three other agents, and involve a human approval step in the middle. Locking that whole span isn't practical, and it's exactly the problem the Saga pattern was built for: instead of one atomic transaction, run a sequence of local transactions, and give every step a <em>compensating action</em> to undo it if a later step fails.</p>
+      <p>This — not any cryptographic guarantee — is the honest answer to "agents are probabilistic, isn't that risky." You cannot make a language model's judgment deterministic by wrapping it in a stronger protocol. What you can do is make every step it takes reversible: a Cart Mandate the buyer-agent shouldn't have accepted gets cancelled, a Payment Mandate gets refunded, a downstream booking gets a compensating cancellation. AP2's mandate chain is set up to support exactly this — the risk isn't eliminated, it's bounded and made recoverable, which is what Sagas have always done for fallible distributed workflows.</p>
+    </section>
+
+    <section class="chapter" id="quorum">
+      <span class="eyebrow">Quorum</span>
+      <h2>Trusting an Unreliable Voice</h2>
+      <div class="theory-tag">Byzantine Fault Tolerance (BFT) — Lamport, Shostak &amp; Pease, 1982</div>
+      <p>The Byzantine Generals Problem asked how a distributed system reaches correct agreement when some participants might be faulty or actively lying, not just offline. The answer — quorum-based consensus, where you trust the agreement of a majority over any single voice — predates blockchain by decades; it's the reason blockchain's consensus layers work at all, not something blockchain invented.</p>
+      <p>It's also the honest framing for probabilistic agents. A single LLM-driven agent's output is, at best, a Byzantine node with good intentions and unreliable judgment. Requiring quorum attestation — a second verifier agent, a rules-based policy check, or a human-in-the-loop sign-off — before a Mandate finalizes is a direct application of 1982's answer to 2026's problem: don't trust one voice, trust agreement among several independent ones.</p>
+    </section>
+
+    <section class="chapter" id="architecture">
+      <span class="eyebrow">Commit</span>
+      <h2>Architecture</h2>
+      <p>Laid flat, the current stack sorts into three layers — and each one has a named theoretical ancestor, not a vague "this is kind of like" resemblance:</p>
+
+      <div class="diagram-wrap">
+        <svg viewBox="0 0 820 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram mapping MCP, A2A, and AP2 to their distributed-systems ancestors">
+          <style>
+            .lbl{font-family:'IBM Plex Mono', monospace; font-size:13px; fill:#1C1F26;}
+            .lbl-sm{font-family:'IBM Plex Mono', monospace; font-size:11px; fill:#4A4F58;}
+            .box{fill:#EDEAE1; stroke:#1C1F26; stroke-width:1.5;}
+            .box-accent{fill:#2F6F63; stroke:#2F6F63;}
+            .arrow{stroke:#4A4F58; stroke-width:1.3; fill:none; marker-end:url(#arrowhead);}
+          </style>
+          <defs>
+            <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="#4A4F58"/>
+            </marker>
+          </defs>
+
+          <!-- column headers -->
+          <text x="230" y="28" class="lbl-sm" text-anchor="middle">2026 PROTOCOL</text>
+          <text x="590" y="28" class="lbl-sm" text-anchor="middle">THEORETICAL ANCESTOR</text>
+
+          <!-- Row 1: MCP -->
+          <rect x="40" y="50" width="380" height="80" class="box"/>
+          <text x="60" y="80" class="lbl">MCP — Model Context Protocol</text>
+          <text x="60" y="100" class="lbl-sm">agent → tool / data access layer</text>
+          <line x1="420" y1="90" x2="500" y2="90" class="arrow"/>
+          <rect x="500" y="50" width="280" height="80" class="box"/>
+          <text x="520" y="80" class="lbl">RPC / OSI driver layer</text>
+          <text x="520" y="100" class="lbl-sm">remote procedure call, ~1980s</text>
+
+          <!-- Row 2: A2A -->
+          <rect x="40" y="160" width="380" height="80" class="box"/>
+          <text x="60" y="190" class="lbl">A2A — Agent2Agent</text>
+          <text x="60" y="210" class="lbl-sm">agent → agent delegation layer</text>
+          <line x1="420" y1="200" x2="500" y2="200" class="arrow"/>
+          <rect x="500" y="160" width="280" height="80" class="box"/>
+          <text x="520" y="184" class="lbl">Contract Net Protocol</text>
+          <text x="520" y="204" class="lbl-sm">+ FIPA-ACL / KQML, 1980–90s</text>
+
+          <!-- Row 3: AP2 -->
+          <rect x="40" y="270" width="380" height="100" class="box box-accent"/>
+          <text x="60" y="300" class="lbl" fill="#EDEAE1">AP2 — Agent Payments Protocol</text>
+          <text x="60" y="320" class="lbl-sm" fill="#EDEAE1">agent → agent transaction layer</text>
+          <line x1="420" y1="320" x2="500" y2="320" class="arrow"/>
+          <rect x="500" y="270" width="280" height="100" class="box"/>
+          <text x="520" y="294" class="lbl">Two-Phase Commit</text>
+          <text x="520" y="314" class="lbl-sm">+ Saga Pattern, 1978 / 1987</text>
+          <text x="520" y="334" class="lbl-sm">+ Byzantine Fault Tolerance, 1982</text>
+        </svg>
+        <div class="diagram-cap">Fig. 1 — Each layer of the current agent stack, mapped to the specific distributed-systems theory it re-implements.</div>
+      </div>
+    </section>
+
+    <section class="chapter" id="usecase">
+      <span class="eyebrow">Replay</span>
+      <h2>Use Case: Sourcing a Part, Automatically</h2>
+      <p>A procurement agent needs a replacement part for a warehouse conveyor, under $400, deliverable within a week. Walking it through the stack above:</p>
+
+      <div class="usecase">
+        <div class="step">
+          <span class="marker mono">BEGIN</span>
+          <p>The procurement agent broadcasts a call-for-proposal to three supplier agents it discovered via their Agent Cards — the Contract Net auction, running over A2A.</p>
+        </div>
+        <div class="step">
+          <span class="marker mono">PREPARE</span>
+          <p>Each supplier agent replies with a FIPA-style <span class="mono">propose</span> performative: part, price, lead time — structured against a shared schema so "lead time" means the same thing to all four agents.</p>
+        </div>
+        <div class="step">
+          <span class="marker mono">VOTE</span>
+          <p>The winning bid becomes a Cart Mandate. The procurement agent checks it against its Intent Mandate (budget, deadline) — the 2PC prepare/vote step, now a signature check instead of a network round-trip.</p>
+        </div>
+        <div class="step">
+          <span class="marker mono">QUORUM</span>
+          <p>Because the order exceeds a policy threshold, a second verifier agent independently re-checks the Cart against the Intent before sign-off — Byzantine-style: don't commit on one agent's word alone.</p>
+        </div>
+        <div class="step">
+          <span class="marker mono">COMMIT</span>
+          <p>Payment Mandate signs, funds move, the deal settles.</p>
+        </div>
+        <div class="step abort">
+          <span class="marker mono">COMPENSATE</span>
+          <p>Supplier cancels the next morning. No re-negotiation from scratch — the Saga's compensating action fires: refund the Payment Mandate, reopen the Cart, restart the auction among the two remaining bidders.</p>
+        </div>
+      </div>
+    </section>
+
+    <p>None of this makes A2A, MCP, or AP2 less useful — standardizing forty years of scattered theory into one interoperable, cryptographically verifiable stack is genuinely hard, valuable work. It just means the risk conversation should be about what's actually new: not "can we trust the wire protocol," which was solved before most of us were writing code, but "can we bound and recover from a probabilistic agent's bad judgment," which is the one piece none of 1978, 1980, 1982, or 1987 anticipated.</p>
+
+    <div class="glossary">
+      <h3>Glossary</h3>
+      <dl>
+        <dt>A2A</dt><dd>Agent2Agent Protocol — Google's open standard for agent-to-agent coordination and task delegation.</dd>
+        <dt>MCP</dt><dd>Model Context Protocol — Anthropic's open standard for connecting agents to tools and data sources.</dd>
+        <dt>AP2</dt><dd>Agent Payments Protocol — Google's open standard for agent-initiated, cryptographically authorized payments.</dd>
+        <dt>CNP</dt><dd>Contract Net Protocol — a 1980 task-allocation protocol based on announce/bid/award.</dd>
+        <dt>FIPA-ACL</dt><dd>Foundation for Intelligent Physical Agents' Agent Communication Language — a 1990s standard for structuring agent messages around speech acts.</dd>
+        <dt>KQML</dt><dd>Knowledge Query and Manipulation Language — an earlier agent-messaging language FIPA-ACL built on.</dd>
+        <dt>2PC</dt><dd>Two-Phase Commit — a distributed-transaction protocol ensuring all parties commit or none do.</dd>
+        <dt>BFT</dt><dd>Byzantine Fault Tolerance — consensus that holds even when some participants are faulty or dishonest.</dd>
+        <dt>VC</dt><dd>Verifiable Credential — a W3C standard for cryptographically signed, tamper-evident digital claims.</dd>
+      </dl>
+    </div>
+  </article>
+</div>
+
+<footer>
+  <span>The Pipeline Review — Vol. 5</span>
+  <span>Sirish Simha</span>
+</footer>
+
+</body>
+</html>
