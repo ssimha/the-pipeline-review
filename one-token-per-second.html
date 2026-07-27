@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>One Token Per Second — The Pipeline Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#10130f;
+    --bg-raised:#161a14;
+    --ink:#ece7da;
+    --ink-dim:#a8a498;
+    --ink-faint:#6b6a5f;
+    --amber:#c9903f;
+    --amber-dim:#8a6531;
+    --teal:#4c8c78;
+    --rule:#2a2e24;
+    --max-w:720px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:17px;
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; animation-iteration-count:1 !important;}
+  }
+  a{color:var(--teal);}
+  a:focus-visible, button:focus-visible{outline:2px solid var(--amber); outline-offset:3px;}
+
+  .masthead{border-bottom:1px solid var(--rule); padding:28px 24px 22px;}
+  .masthead-inner{max-width:var(--max-w); margin:0 auto; display:flex; align-items:baseline; justify-content:space-between; gap:16px;}
+  .brand{font-family:'IBM Plex Mono', monospace; font-size:13px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-dim);}
+  .brand strong{color:var(--amber); font-weight:500;}
+  .issue{font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-faint); white-space:nowrap;}
+
+  main{max-width:var(--max-w); margin:0 auto; padding:0 24px;}
+
+  .hero{padding:56px 0 8px;}
+  .eyebrow{font-family:'IBM Plex Mono', monospace; font-size:12.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--amber); margin-bottom:18px;}
+  h1{font-family:'Fraunces', serif; font-weight:600; font-size:clamp(2.1rem, 5vw, 3.1rem); line-height:1.08; letter-spacing:-0.01em; margin:0 0 20px; color:var(--ink);}
+  .dek{font-size:19px; line-height:1.55; color:var(--ink-dim); max-width:58ch; margin:0 0 30px;}
+  .byline{font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--ink-faint); padding-bottom:32px; border-bottom:1px solid var(--rule);}
+  .byline strong{color:var(--ink-dim); font-weight:500;}
+
+  .pulse-panel{margin:36px 0 8px; background:var(--bg-raised); border:1px solid var(--rule); border-radius:3px; padding:20px 22px; display:flex; align-items:center; gap:18px;}
+  .pulse-dot-wrap{position:relative; width:34px; height:34px; flex:none; display:flex; align-items:center; justify-content:center;}
+  .pulse-dot{width:9px; height:9px; border-radius:50%; background:var(--amber);}
+  .pulse-ring{position:absolute; inset:0; border-radius:50%; border:1px solid var(--amber-dim); animation:tick 3.4s ease-out infinite;}
+  @keyframes tick{0%{transform:scale(0.3); opacity:0.9;} 75%{transform:scale(1); opacity:0;} 100%{transform:scale(1); opacity:0;}}
+  .pulse-copy{font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:var(--ink-faint); line-height:1.6;}
+  .pulse-copy .rate strong{color:var(--amber); font-weight:500;}
+
+  .tldr{margin:36px 0 8px; border:1px solid var(--rule); border-left:3px solid var(--teal); border-radius:2px; padding:18px 22px; background:var(--bg-raised);}
+  .tldr-label{font-family:'IBM Plex Mono', monospace; font-size:11.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--teal); margin-bottom:10px;}
+  .tldr p{margin:0; color:var(--ink-dim); font-size:16px;}
+
+  article{padding:40px 0 90px;}
+  article h2{font-family:'Fraunces', serif; font-weight:600; font-size:1.5rem; letter-spacing:-0.005em; margin:48px 0 16px; color:var(--ink);}
+  article h3{font-family:'IBM Plex Mono', monospace; font-size:13px; letter-spacing:0.06em; text-transform:uppercase; color:var(--teal); margin:30px 0 10px;}
+  article p{margin:0 0 18px; color:var(--ink);}
+  article p.lead{font-size:18.5px; color:var(--ink-dim); line-height:1.6;}
+  .pull{font-family:'Fraunces', serif; font-weight:500; font-style:italic; font-size:1.25rem; line-height:1.5; color:var(--amber); border-left:2px solid var(--amber-dim); padding:2px 0 2px 22px; margin:32px 0;}
+  code{font-family:'IBM Plex Mono', monospace; font-size:0.87em; background:var(--bg-raised); padding:0.1em 0.4em; border-radius:2px; color:var(--teal);}
+
+  .ledger{margin:24px 0 8px; border:1px solid var(--rule); border-radius:3px; overflow:hidden;}
+  .ledger-row{display:grid; grid-template-columns:1fr 1fr;}
+  .ledger-row + .ledger-row{border-top:1px solid var(--rule);}
+  .ledger-cell{padding:16px 20px;}
+  .ledger-cell + .ledger-cell{border-left:1px solid var(--rule);}
+  .ledger-head .ledger-cell{font-family:'IBM Plex Mono', monospace; font-size:11.5px; letter-spacing:0.08em; text-transform:uppercase; padding:12px 20px;}
+  .ledger-head .ledger-cell:first-child{color:var(--teal); background:rgba(76,140,120,0.08);}
+  .ledger-head .ledger-cell:last-child{color:var(--amber); background:rgba(201,144,63,0.08);}
+  .ledger-row:not(.ledger-head) .ledger-cell{font-size:14.5px; color:var(--ink-dim); line-height:1.55;}
+  @media (max-width:560px){
+    .ledger-row{grid-template-columns:1fr;}
+    .ledger-cell + .ledger-cell{border-left:none; border-top:1px solid var(--rule);}
+  }
+
+  .rule{border:none; border-top:1px solid var(--rule); margin:48px 0;}
+
+  ul.plain{margin:0 0 18px; padding-left:0; list-style:none;}
+  ul.plain li{padding-left:22px; position:relative; margin-bottom:12px; color:var(--ink);}
+  ul.plain li::before{content:"—"; position:absolute; left:0; top:0; color:var(--ink-faint);}
+  ul.plain li strong{color:var(--ink);}
+
+  .verdict{font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:4px;}
+
+  footer{border-top:1px solid var(--rule); padding:32px 24px 48px;}
+  .footer-inner{max-width:var(--max-w); margin:0 auto; font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-faint); display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;}
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><strong>The Pipeline Review</strong> · field notes on data & systems</div>
+    <div class="issue">Vol. VI</div>
+  </div>
+</div>
+
+<main>
+  <div class="hero">
+    <div class="eyebrow">Inference · Weekend Tinkering</div>
+    <h1>One Token Per Second: I Ran a 744B Model on My Laptop and It Was Painfully, Beautifully Slow</h1>
+    <p class="dek">A dev named JustVugg built Colibri, a tiny C program that runs Z.ai's GLM-5.2 — a 744-billion-parameter model — on a laptop with no GPU. Here's what it actually is, when it's genuinely useful, and when it's just a party trick.</p>
+    <div class="byline">By <strong>Sirish Simha</strong></div>
+
+    <div class="pulse-panel" role="img" aria-label="Simulated slow token generation, one token roughly every three seconds">
+      <div class="pulse-dot-wrap">
+        <div class="pulse-dot"></div>
+        <div class="pulse-ring"></div>
+      </div>
+      <div class="pulse-copy">
+        <span class="rate">this is roughly what <strong>0.3 tokens/sec</strong> feels like.</span><br>
+        grab your coffee. it's going to be a while.
+      </div>
+    </div>
+  </div>
+
+  <article>
+    <div class="tldr">
+      <div class="tldr-label">TL;DR</div>
+      <p>Colibri runs GLM-5.2 (744B params, MIT-licensed, made by Z.ai) on ~25GB of RAM and zero GPU, by streaming most of the model off your SSD instead of loading it all into memory. It's real, it's clever, and it's slow — think one token every few seconds. Great for batch jobs and air-gapped work. Useless for anything you'd want to chat with.</p>
+    </div>
+
+    <p class="lead">Okay so here's a fun one for your Tuesday coffee. Somebody actually built a way to run a 744-billion-parameter model — the kind that normally needs a rack of GPUs — on a regular laptop. No CUDA, no cloud, no credit card. Just a single C file and a lot of patience.</p>
+
+    <h2>Wait, who made what?</h2>
+    <p>Two different things, so let's untangle them:</p>
+    <ul class="plain">
+      <li><strong>GLM-5.2</strong> is the model. It's built by Z.ai (formerly Zhipu AI, a Chinese lab), released in June 2026 under an MIT license — meaning anyone can download the weights and run them, no strings attached. It's genuinely good, especially at coding — it beats or matches GPT-5.5 on several long-horizon coding benchmarks, and it's the strongest open-weight model on the leaderboards right now.</li>
+      <li><strong>Colibri</strong> is the engine — a separate open-source project by a developer going by JustVugg. It's not a general-purpose runtime like llama.cpp; it's purpose-built, hardcoded even, to run GLM-5.2 specifically. Single C file, about 2,400 lines, zero dependencies.</li>
+    </ul>
+    <p>Put them together and you get a 744B model answering questions on a machine that has no business running it.</p>
+
+    <h2>How does it not just... run out of memory?</h2>
+    <p>GLM-5.2 is a Mixture-of-Experts model — only about 40 billion of its 744 billion parameters are actually "awake" for any given token. Most engines still load the whole thing into GPU memory anyway because that's fast and simple. Colibri does the opposite: it keeps the small core of the model in RAM (about 10GB) and streams the rest — the specific experts each token needs — straight off your SSD, on demand. Like Netflix doesn't download the whole movie before playing frame one.</p>
+
+    <div class="pull">It's not fast. Nobody's claiming it's fast. The trick is that "slow and possible" beats "fast and impossible" for a surprising number of jobs.</div>
+
+    <h2>Okay but is it actually useful, or just a cool demo</h2>
+    <p>Both, honestly — depends what you're doing with it.</p>
+
+    <h3>Where it earns its keep</h3>
+    <ul class="plain">
+      <li><strong>Overnight batch work.</strong> Summarizing a document pile, classifying a backlog, drafting reports nobody's watching in real time. If it runs while you sleep, who cares if it's slow.</li>
+      <li><strong>Air-gapped or locked-down environments.</strong> Places where calling any external API is a hard no. Slow-and-local beats fast-and-not-allowed.</li>
+      <li><strong>The one gnarly query that's worth the wait.</strong> A contract review, a security audit, something you'd otherwise pay a consultant for. A few minutes of machine time is still cheap.</li>
+      <li><strong>Kicking the tires before you spend real money.</strong> Want to know if GLM-5.2 can even do your task before you commit to GPU rental or an API contract? Test it slow and free first.</li>
+    </ul>
+
+    <h3>Where it falls flat on its face</h3>
+    <ul class="plain">
+      <li><strong>Chat, agents, anything interactive.</strong> A coding agent making rapid tool calls needs speed. This gives you the opposite of speed.</li>
+      <li><strong>Your SSD will hate you.</strong> Streaming hundreds of gigabytes off disk repeatedly is not what a consumer NVMe drive signed up for. Fine occasionally, bad continuously.</li>
+      <li><strong>It's a black box you can't fully audit.</strong> MIT license means no legal restrictions, but you're still running a giant weights file from a Chinese lab — you can inspect the engine code, not really the model's "judgment."</li>
+    </ul>
+
+    <h2>The honest verdict</h2>
+    <div class="ledger">
+      <div class="ledger-row ledger-head">
+        <div class="ledger-cell">What you get</div>
+        <div class="ledger-cell">What it costs you</div>
+      </div>
+      <div class="ledger-row">
+        <div class="ledger-cell">A 744B model on a laptop, no GPU required</div>
+        <div class="ledger-cell">~0.3–1 tokens/sec on decent hardware, worse on a slow SSD</div>
+      </div>
+      <div class="ledger-row">
+        <div class="ledger-cell">Nothing leaves your machine — no API, no third party</div>
+        <div class="ledger-cell">You're trusting a weights file you can't really inspect</div>
+      </div>
+      <div class="ledger-row">
+        <div class="ledger-cell">Zero cloud spend, zero rate limits</div>
+        <div class="ledger-cell">Real wear and tear on your SSD if you lean on it</div>
+      </div>
+      <div class="ledger-row">
+        <div class="ledger-cell">Cheap way to test if a task is even feasible</div>
+        <div class="ledger-cell">Completely unusable for anything real-time</div>
+      </div>
+    </div>
+
+    <hr class="rule">
+
+    <p><span class="verdict">Bottom line:</span> Colibri isn't trying to replace your production stack, and it shouldn't. It's a proof of concept that huge MoE models don't strictly need a GPU cluster to exist — they just need somewhere to wait. If your task can wait too, that's a genuinely useful trade. If it can't, this is a fun Saturday project and nothing more. Know which one you're doing before you start the run.</p>
+  </article>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <span>The Pipeline Review</span>
+    <span>Sirish Simha</span>
+  </div>
+</footer>
+
+</body>
+</html>
