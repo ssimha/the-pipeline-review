@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why Your Agent Lost That Conversation | The Pipeline Review</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Georgia', serif;
+            line-height: 1.8;
+            color: #2c3e50;
+            background: #fafaf8;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            background: white;
+            padding: 60px 40px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .header {
+            margin-bottom: 40px;
+            border-bottom: 2px solid #e74c3c;
+            padding-bottom: 20px;
+        }
+        h1 {
+            font-size: 32px;
+            margin-bottom: 12px;
+            color: #1a1a1a;
+            line-height: 1.3;
+        }
+        .meta {
+            font-size: 13px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .byline {
+            font-size: 13px;
+            color: #95a5a6;
+            margin-top: 12px;
+        }
+        h2 {
+            font-size: 20px;
+            margin-top: 40px;
+            margin-bottom: 16px;
+            color: #1a1a1a;
+            border-left: 4px solid #e74c3c;
+            padding-left: 16px;
+        }
+        p {
+            margin-bottom: 18px;
+            text-align: justify;
+        }
+        .scenario {
+            background: #f0f8ff;
+            padding: 20px;
+            margin: 24px 0;
+            border-left: 4px solid #3498db;
+            font-style: italic;
+            font-size: 15px;
+            line-height: 1.7;
+        }
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 16px;
+            margin: 20px 0;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            border-radius: 4px;
+        }
+        .highlight {
+            background: #fff9e6;
+            padding: 2px 6px;
+            border-radius: 2px;
+            font-weight: 500;
+        }
+        .footnote {
+            background: #f5f5f5;
+            padding: 16px;
+            margin-top: 32px;
+            font-size: 14px;
+            border-left: 4px solid #95a5a6;
+            color: #555;
+        }
+        .divider {
+            height: 1px;
+            background: #ecf0f1;
+            margin: 40px 0;
+        }
+        strong {
+            color: #1a1a1a;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Why Your Agent Lost That Conversation (And You Can't Fix It By Prompting Harder)</h1>
+            <div class="meta">The Pipeline Review • Vol. VII</div>
+            <div class="byline">By Sirish Simha</div>
+        </div>
+
+        <p>You built an AI agent. Tested it. First three messages back and forth—perfect. Your RAG is working, your prompts are crisp, the responses are coherent.</p>
+
+        <p>Then message five arrives. And your agent looks at you like it's meeting you for the first time.</p>
+
+        <p class="scenario">
+            <strong>You:</strong> "So based on what we discussed earlier about the quarterly budget, which department should we prioritize?"<br><br>
+            <strong>Agent:</strong> "I don't have any context about a quarterly budget discussion. Could you provide more details?"<br><br>
+            <strong>You (thinking):</strong> "I literally just told you three messages ago. Let me rewrite my prompt to be even more explicit..."
+        </p>
+
+        <p>You rewrite the prompt. Make it more specific. Add system instructions. Maybe throw in a few more examples.</p>
+
+        <p>Agent still doesn't know what you're talking about.</p>
+
+        <p>Here's what's actually happening: <span class="highlight">This isn't a prompt problem. It's an architecture problem.</span></p>
+
+        <div class="divider"></div>
+
+        <h2>The Context Window Is Your First Bottleneck</h2>
+
+        <p>Every LLM has a context window—a fixed number of tokens it can see at one time. GPT-4 sees about 8,000 tokens. Claude sees 200,000. Whatever the number, it's finite.</p>
+
+        <p>When you send message one, the entire conversation (so far) fits inside that window. The model sees everything. Understands everything.</p>
+
+        <p>By message five or six, if your messages are getting longer or you're having a detailed discussion, something has to give. Old messages start falling off the back of the context window. The model can't see them anymore.</p>
+
+        <p>The model isn't <em>refusing</em> to remember. It literally cannot <em>see</em> the old messages. It's like trying to read a book when you can only see one page at a time, and each new page you turn means the previous one disappears forever.</p>
+
+        <p class="scenario">
+            Message 1: "The quarterly budget is $2M"<br>
+            Message 2: "Here's the breakdown by department"<br>
+            Message 3: "Marketing wants a 30% increase"<br>
+            Message 4: "R&D is stable this year"<br>
+            Message 5: "Which department should we prioritize?"<br><br>
+            <strong>What the model sees in Message 5:</strong> Just Messages 4 and 5 (everything else fell off the context window)<br>
+            <strong>What you assumed it saw:</strong> All of Messages 1-5
+        </p>
+
+        <h2>But Wait—There's No Persistent Memory Either</h2>
+
+        <p>Even if you have a giant context window, your agent still has a bigger problem: <span class="highlight">it has no way to remember things between separate conversations.</span></p>
+
+        <p>Each new chat is a fresh start. No memory of what you discussed last week. No notes from the previous session. No accumulated context of the working relationship.</p>
+
+        <p>Your agent is like a waiter with severe amnesia. Great within a single shift (one conversation), but the next day it's like you're a stranger again.</p>
+
+        <p>Most teams building agents never think about this. They build a system that works for a single conversation, ship it, and then get shocked when real users expect continuity.</p>
+
+        <div class="divider"></div>
+
+        <h2>What Most Teams Get Wrong</h2>
+
+        <p>When the amnesia hits, the instinct is always the same:</p>
+
+        <p><strong>"I need a better prompt."</strong></p>
+
+        <p>Teams spend weeks perfecting system prompts, adding retrieval augmentation, throwing more examples at the model. And sometimes things get incrementally better. But the fundamental problem remains: the model still can't see information it was never given in the current context window, and it still has no persistent memory between conversations.</p>
+
+        <p>Rewriting prompts is treating the symptom, not the disease.</p>
+
+        <p>The disease is <span class="highlight">architectural.</span></p>
+
+        <h2>The Real Problem: You Need a Memory Layer</h2>
+
+        <p>If you want an agent that actually remembers conversations, you need to build three things:</p>
+
+        <p><strong>1. Conversation State Storage</strong></p>
+
+        <p>Every conversation needs a place to live. A database, a key-value store, whatever. When your user sends message five, your agent retrieves the history of messages one through four from storage, inserts them into the context, and <em>then</em> sends everything to the model.</p>
+
+        <p>Now the model can see the full conversation. It actually has the information it needs.</p>
+
+        <p><strong>2. Retrieval Strategy</strong></p>
+
+        <p>If your context window is small but your conversation history is huge, you can't just dump everything in. You need to be smart about what goes in.</p>
+
+        <p>This might mean: retrieve the last N messages, or retrieve semantically similar messages, or retrieve by recency-weighted importance. The strategy depends on your use case.</p>
+
+        <p><strong>3. Persistent Memory Across Sessions</strong></p>
+
+        <p>For long-term agent behavior, you need to summarize or embed key facts from old conversations and make them available to new conversations. This might be a running summary, extracted facts, or embeddings of important context from previous sessions.</p>
+
+        <p>Without this, every conversation starts from zero.</p>
+
+        <div class="divider"></div>
+
+        <h2>A Concrete Example</h2>
+
+        <p>Let's say you're building a research assistant for analysts. The analyst has a 10,000-token conversation about semiconductor supply chains over the course of a week. By message 50, your model has seen maybe messages 35-50 (everything else dropped out of context).</p>
+
+        <p><strong>Without a memory layer:</strong> Analyst comes back next week and asks "what was our main finding about TSMC?" Agent: "I don't have that information." Analyst leaves. You shipped a product that doesn't work.</p>
+
+        <p><strong>With a memory layer:</strong> Your system stores the entire conversation. When the analyst comes back next week, you either: (a) retrieve the key summary from the old conversation and prepend it to the new one, or (b) embed the old findings and inject them when they become relevant. Now the agent can answer "our main finding about TSMC was X."</p>
+
+        <p>That's the difference between an agent that forgets and an agent that learns.</p>
+
+        <div class="divider"></div>
+
+        <h2>Why This Matters Now</h2>
+
+        <p>Most early LLM apps got away with ignoring this because they were demos—single conversations, demos, proofs of concept. The context window was big enough for a 10-minute session.</p>
+
+        <p>But the moment you put an agent in front of real users for real work, amnesia becomes the bottleneck. And throwing better prompts at it won't fix it.</p>
+
+        <p>This is an architectural choice, not a model tuning problem. And making it consciously—deciding upfront how your agent will store and retrieve context—is what separates systems that work from systems that just <em>seem</em> like they work in a demo.</p>
+
+        <p>The irony: this problem isn't new. Teams building distributed systems, databases, and information retrieval systems solved this 40+ years ago. Memory hierarchy, caching, retrieval semantics—all solved problems. Agents are just rediscovering the same patterns.</p>
+
+        <p>But that's a conversation for another post.</p>
+
+        <div class="footnote">
+            <strong>Next in this series:</strong> How 1980s expert systems already solved the agent memory problem, and why we're just reinventing it with new names.
+        </div>
+
+    </div>
+</body>
+</html>
