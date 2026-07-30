@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why Your RAG System Hallucinates | The Pipeline Review</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Georgia', serif;
+            line-height: 1.8;
+            color: #2c3e50;
+            background: #fafaf8;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            background: white;
+            padding: 60px 40px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .header {
+            margin-bottom: 40px;
+            border-bottom: 2px solid #e74c3c;
+            padding-bottom: 20px;
+        }
+        h1 {
+            font-size: 32px;
+            margin-bottom: 12px;
+            color: #1a1a1a;
+            line-height: 1.3;
+        }
+        .meta {
+            font-size: 13px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .byline {
+            font-size: 13px;
+            color: #95a5a6;
+            margin-top: 12px;
+        }
+        h2 {
+            font-size: 20px;
+            margin-top: 40px;
+            margin-bottom: 16px;
+            color: #1a1a1a;
+            border-left: 4px solid #e74c3c;
+            padding-left: 16px;
+        }
+        p {
+            margin-bottom: 18px;
+            text-align: justify;
+        }
+        .scenario {
+            background: #f0f8ff;
+            padding: 20px;
+            margin: 24px 0;
+            border-left: 4px solid #3498db;
+            font-style: italic;
+            font-size: 15px;
+            line-height: 1.7;
+        }
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 16px;
+            margin: 20px 0;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            border-radius: 4px;
+        }
+        .highlight {
+            background: #fff9e6;
+            padding: 2px 6px;
+            border-radius: 2px;
+            font-weight: 500;
+        }
+        .footnote {
+            background: #f5f5f5;
+            padding: 16px;
+            margin-top: 32px;
+            font-size: 14px;
+            border-left: 4px solid #95a5a6;
+            color: #555;
+        }
+        .divider {
+            height: 1px;
+            background: #ecf0f1;
+            margin: 40px 0;
+        }
+        strong {
+            color: #1a1a1a;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Why Your RAG System Is Making Stuff Up (And Reranking Won't Fix It)</h1>
+            <div class="meta">The Pipeline Review • Vol. VIII</div>
+            <div class="byline">By Sirish Simha</div>
+        </div>
+
+        <p>You built a RAG (Retrieval Augmented Generation) system. Tested it. You fed it a document about your company's pricing policy, asked it to summarize, and got back a perfectly coherent answer.</p>
+
+        <p>Except the answer was wrong. Completely fabricated. The pricing number it cited? Never in the document. The policy detail? Made up.</p>
+
+        <p>So you do what everyone does: you add reranking. Better scoring of the retrieved chunks. Maybe you add semantic similarity thresholds. Stricter filtering. You rebuild, test again.</p>
+
+        <p>And it *still* hallucinates.</p>
+
+        <p class="scenario">
+            <strong>Your question:</strong> "What's our standard payment term for enterprise customers?"<br><br>
+            <strong>Retrieved chunk (from docs):</strong> "Enterprise customers receive customized terms based on contract negotiations."<br><br>
+            <strong>Model response:</strong> "Enterprise customers receive 60-day net terms by default."<br><br>
+            <strong>Reality:</strong> The document never said "60-day net terms." The model invented it because it sounded plausible.
+        </p>
+
+        <p>Here's what's actually happening: <span class="highlight">This isn't a retrieval problem. It's a grounding problem.</span></p>
+
+        <div class="divider"></div>
+
+        <h2>Retrieval Is Not The Bottleneck</h2>
+
+        <p>When people say "RAG hallucinates," they usually blame retrieval. "We got the wrong chunk," or "the ranking wasn't good enough."</p>
+
+        <p>But watch what happens in most RAG systems:</p>
+
+        <p>Your vector database retrieves 10 chunks. The reranker scores them. The top 3 go into the LLM context. The LLM reads those 3 chunks and generates an answer.</p>
+
+        <p>The problem: <span class="highlight">The LLM doesn't actually have to use the retrieved chunks.</span></p>
+
+        <p>If the LLM's training data already contains information (or patterns that look like information) about your topic, it will use that. It doesn't distinguish between "this came from the retrieved documents" and "this is from my training data." Both feel equally real to the model.</p>
+
+        <p>You retrieved the right chunk. The reranker scored it highly. But the LLM ignored it and hallucinated instead because hallucinating was *easier* — it already had a pattern for "enterprise pricing sounding answers" in its weights.</p>
+
+        <p class="scenario">
+            <strong>What you expected:</strong><br>
+            1. Retrieve chunk: "Enterprise customers receive customized terms"<br>
+            2. Model reads: "customized terms"<br>
+            3. Model answers: "customized terms"<br><br>
+            <strong>What actually happened:</strong><br>
+            1. Retrieve chunk: "Enterprise customers receive customized terms"<br>
+            2. Model reads: "Enterprise" + "customers" + "terms"<br>
+            3. Model's weights: "Oh, I've seen patterns like 'enterprise...terms' → answer with a specific number"<br>
+            4. Model generates: "60-day net terms"<br>
+            5. Model never actually grounded its answer in the retrieval
+        </p>
+
+        <h2>Why Reranking Doesn't Fix This</h2>
+
+        <p>You can make retrieval perfect. Reranking perfect. And the model will still hallucinate.</p>
+
+        <p>Because you're optimizing the wrong layer.</p>
+
+        <p>Better retrieval helps. Reranking helps. But if your architecture doesn't actually *force* the model to ground its answer in the retrieved text, you're just making it easier for the model to ignore your retrieval and use its training data instead.</p>
+
+        <p>It's like adding a better lock to a door when the real problem is that people are climbing through the window. The lock is fine. The window was always open.</p>
+
+        <div class="divider"></div>
+
+        <h2>The Real Problem: Grounding</h2>
+
+        <p>A properly grounded RAG system does three things your current system probably doesn't:</p>
+
+        <p><strong>1. Citation Enforcement</strong></p>
+
+        <p>Your model doesn't just generate an answer. It generates an answer *plus* a citation to the specific chunk it came from. And before returning the answer, your system verifies: does this citation actually support the claim?</p>
+
+        <p>This sounds simple, but it changes everything. The model can't make a claim without citing its source. And if its citation is wrong, you catch it.</p>
+
+        <p><strong>2. Confidence Scoring Against Retrieval</strong></p>
+
+        <p>When the model generates an answer, you measure: how well does this answer match what was actually in the retrieved chunks?</p>
+
+        <p>If the retrieved chunk says "customized terms" and the model says "60-day net terms," the confidence drops. The system flags it as uncertain and either refuses to answer or marks it as low-confidence.</p>
+
+        <p><strong>3. Out-of-Context Detection</strong></p>
+
+        <p>Before the model generates an answer, check: is this question even answerable from the retrieved documents?</p>
+
+        <p>Some questions should get a "I couldn't find that in your documents" response, not a hallucination. The model needs an explicit path for saying "I don't know."</p>
+
+        <div class="divider"></div>
+
+        <h2>A Concrete Example (What Proper Grounding Looks Like)</h2>
+
+        <p><strong>Without grounding (your current system):</strong></p>
+
+        <p class="scenario">
+            Q: "What's our standard payment term?"<br>
+            Retrieved: "Enterprise customers receive customized terms based on..."<br>
+            Answer: "60-day net terms"<br>
+            Confidence: 95% (model is very confident, even though it made it up)<br>
+            User believes it. Quotes it in an email. Wrong information spreads.
+        </p>
+
+        <p><strong>With grounding (proper RAG):</strong></p>
+
+        <p class="scenario">
+            Q: "What's our standard payment term?"<br>
+            Retrieved: "Enterprise customers receive customized terms based on..."<br>
+            Model generates: "60-day net terms"<br>
+            System checks: Does the retrieved text support "60-day net terms"? NO.<br>
+            System flags: Confidence = 15% (low confidence)<br>
+            System response: "I found information about enterprise terms being customized, but I don't see a specific number. You may need to check the contract details."<br>
+            User gets accurate information (or no information, which is better than wrong information).
+        </p>
+
+        <h2>Why This Matters More Than You Think</h2>
+
+        <p>RAG systems are deployed in high-stakes environments: customer support chatbots, legal research tools, medical documentation, financial advisory systems. Hallucination isn't a cute model quirk in these contexts — it's a liability.</p>
+
+        <p>Fixing retrieval buys you 20% improvement. Fixing grounding buys you the remaining 80%.</p>
+
+        <p>Most teams stop at retrieval because it's the obvious layer. Reranking is sexy. Vector databases are hot. But grounding is where the actual safety lives, and it's invisible, which means most RAG systems ship without it.</p>
+
+        <p>The irony: this problem isn't new. Expert systems in the 1980s faced the exact same issue — knowledge bases retrieving facts, but the inference engine (the model) making up conclusions anyway. They solved it with explicit grounding mechanisms, chain-of-thought reasoning, and confidence thresholds. We're just rediscovering it with neural nets.</p>
+
+        <div class="divider"></div>
+
+        <h2>The Architectural Fix</h2>
+
+        <p>If you want RAG that doesn't hallucinate, you need to add a grounding layer between retrieval and generation. This layer:</p>
+
+        <p><strong>1. Enforces citations</strong> — every claim must cite a source chunk<br>
+        <strong>2. Verifies coherence</strong> — claims must align with retrieved text<br>
+        <strong>3. Provides fallback</strong> — "I don't know" is an acceptable answer<br>
+        <strong>4. Measures confidence</strong> — returns a score you can act on</p>
+
+        <p>You can build this with prompt engineering (chain-of-thought prompts, explicit instruction to cite), or you can build it programmatically (measure semantic overlap between generated answer and retrieved chunks, score it, gate the response).</p>
+
+        <p>Either way: grounding is not optional if you care about accuracy.</p>
+
+        <div class="footnote">
+            <strong>Next in this series:</strong> How 1980s expert systems solved the hallucination problem with explicit grounding mechanisms — and why modern RAG teams keep ignoring the lessons.
+        </div>
+
+    </div>
+</body>
+</html>
